@@ -111,6 +111,16 @@ resource "aws_security_group" "ecs_node_sg" {
   name_prefix = "demo-ecs-node-sg-"
   vpc_id      = aws_vpc.main.id
 
+  dynamic "ingress" {
+    for_each = [80, 443]
+    content {
+      protocol    = "tcp"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 65535
@@ -197,6 +207,54 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
     base              = 1
     weight            = 100
   }
+}
+
+# --- ECS Task policies ---
+data "aws_iam_policy_document" "ecs_access_policy_doc" {
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "sqs:SendMessage",
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBClusters",
+      "rds:DescribeDBSnapshots",
+      "rds:DescribeDBClusterSnapshots"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_access_policy" {
+  name   = "ecs-task-ssm-policy"
+  role   = aws_iam_role.ecs_task_role.name
+  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
+}
+
+resource "aws_iam_role_policy" "ecs_exec_access_policy" {
+  name   = "ecs-exec-ssm-policy"
+  role   = aws_iam_role.ecs_exec_role.name
+  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
 }
 
 # --- ECS Task Role ---
@@ -627,3 +685,5 @@ resource "aws_appautoscaling_policy" "ecs_target_memory2" {
     scale_out_cooldown = 300
   }
 }
+
+# --- ---
