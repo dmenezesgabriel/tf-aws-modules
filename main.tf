@@ -235,20 +235,20 @@ resource "aws_cloudwatch_log_group" "ecs" {
   retention_in_days = 14
 }
 
-# --- ECR Repository helloworld1 ---
-data "aws_ecr_repository" "helloworld1" {
+# --- ECR Repository app1 ---
+data "aws_ecr_repository" "app1" {
   name = "helloworld1"
 }
 
-# --- ECR Repository helloworld2 ---
-data "aws_ecr_repository" "helloworld2" {
+# --- ECR Repository app2 ---
+data "aws_ecr_repository" "app2" {
   name = "helloworld2"
 }
 
-# --- ECS Task Definition ---
+# --- ECS Task Definition app1 ---
 
-resource "aws_ecs_task_definition" "app" {
-  family             = "demo-app"
+resource "aws_ecs_task_definition" "app1" {
+  family             = "demo-app1"
   task_role_arn      = aws_iam_role.ecs_task_role.arn
   execution_role_arn = aws_iam_role.ecs_exec_role.arn
   network_mode       = "awsvpc"
@@ -256,8 +256,8 @@ resource "aws_ecs_task_definition" "app" {
   memory             = 256
 
   container_definitions = jsonencode([{
-    name         = "app",
-    image        = "${data.aws_ecr_repository.helloworld1.repository_url}:latest",
+    name         = "app1",
+    image        = "${data.aws_ecr_repository.app1.repository_url}:latest",
     essential    = true,
     portMappings = [{ containerPort = 80, hostPort = 80 }],
 
@@ -270,7 +270,39 @@ resource "aws_ecs_task_definition" "app" {
       options = {
         "awslogs-region"        = "us-east-1",
         "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
-        "awslogs-stream-prefix" = "app"
+        "awslogs-stream-prefix" = "app1"
+      }
+    },
+  }])
+}
+
+
+# --- ECS Task Definition app2 ---
+
+resource "aws_ecs_task_definition" "app2" {
+  family             = "demo-app2"
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
+  execution_role_arn = aws_iam_role.ecs_exec_role.arn
+  network_mode       = "awsvpc"
+  cpu                = 256
+  memory             = 256
+
+  container_definitions = jsonencode([{
+    name         = "app2",
+    image        = "${data.aws_ecr_repository.app2.repository_url}:latest",
+    essential    = true,
+    portMappings = [{ containerPort = 80, hostPort = 80 }],
+
+    environment = [
+      { name = "EXAMPLE", value = "example" }
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs",
+      options = {
+        "awslogs-region"        = "us-east-1",
+        "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
+        "awslogs-stream-prefix" = "app2"
       }
     },
   }])
@@ -298,17 +330,55 @@ resource "aws_security_group" "ecs_task" {
   }
 }
 
-resource "aws_ecs_service" "app" {
-  name            = "app"
+# --- ECS Service app1 ---
+resource "aws_ecs_service" "app1" {
+  name            = "app1"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
+  task_definition = aws_ecs_task_definition.app1.arn
   desired_count   = 2
 
-  depends_on = [aws_lb_target_group.app]
+  depends_on = [aws_lb_target_group.app1, aws_lb_listener_rule.app1]
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
-    container_name   = "app"
+    target_group_arn = aws_lb_target_group.app1.arn
+    container_name   = "app1"
+    container_port   = 80
+  }
+
+  network_configuration {
+    security_groups = [aws_security_group.ecs_task.id]
+    subnets         = aws_subnet.public[*].id
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.main.name
+    base              = 1
+    weight            = 100
+  }
+
+  ordered_placement_strategy {
+    type  = "spread"
+    field = "attribute:ecs.availability-zone"
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+}
+
+# --- ECS Service app2 ---
+
+resource "aws_ecs_service" "app2" {
+  name            = "app2"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app2.arn
+  desired_count   = 2
+
+  depends_on = [aws_lb_target_group.app2, aws_lb_listener_rule.app2]
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app2.arn
+    container_name   = "app2"
     container_port   = 80
   }
 
@@ -365,8 +435,10 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.http.id]
 }
 
-resource "aws_lb_target_group" "app" {
-  name_prefix = "app-"
+# --- ALB app1 ---
+
+resource "aws_lb_target_group" "app1" {
+  name_prefix = "app1-"
   vpc_id      = aws_vpc.main.id
   protocol    = "HTTP"
   port        = 80
@@ -374,7 +446,7 @@ resource "aws_lb_target_group" "app" {
 
   health_check {
     enabled             = true
-    path                = "/"
+    path                = "/app1/"
     port                = 80
     matcher             = 200
     interval            = 10
@@ -384,37 +456,102 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
+
+# --- ALB app2 ---
+
+resource "aws_lb_target_group" "app2" {
+  name_prefix = "app2-"
+  vpc_id      = aws_vpc.main.id
+  protocol    = "HTTP"
+  port        = 80
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    path                = "/app2/"
+    port                = 80
+    matcher             = 200
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+}
+
+# --- ALB Listeners ---
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.id
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.id
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "404: Not Found"
+      status_code  = "404"
+    }
   }
 }
+
+# --- ALB Listeners app1 ---
+
+resource "aws_lb_listener_rule" "app1" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app1.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/app1*"]
+    }
+  }
+}
+
+# --- ALB Listeners app2 ---
+
+resource "aws_lb_listener_rule" "app2" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app2.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/app2*"]
+    }
+  }
+}
+
 
 output "alb_url" {
   value = aws_lb.main.dns_name
 }
 
-# --- ECS Service Auto Scaling ---
+# --- ECS Service Auto Scaling app 1---
 
-resource "aws_appautoscaling_target" "ecs_target" {
+resource "aws_appautoscaling_target" "ecs_target1" {
   service_namespace  = "ecs"
   scalable_dimension = "ecs:service:DesiredCount"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app1.name}"
   min_capacity       = 2
   max_capacity       = 5
 }
 
-resource "aws_appautoscaling_policy" "ecs_target_cpu" {
+resource "aws_appautoscaling_policy" "ecs_target_cpu1" {
   name               = "application-scaling-policy-cpu"
   policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target1.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_target1.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target1.scalable_dimension
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -427,12 +564,58 @@ resource "aws_appautoscaling_policy" "ecs_target_cpu" {
   }
 }
 
-resource "aws_appautoscaling_policy" "ecs_target_memory" {
+resource "aws_appautoscaling_policy" "ecs_target_memory1" {
   name               = "application-scaling-policy-memory"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_target1.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target1.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target1.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value       = 80
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+  }
+}
+
+# --- ECS Service Auto Scaling app 2---
+
+resource "aws_appautoscaling_target" "ecs_target2" {
+  service_namespace  = "ecs"
+  scalable_dimension = "ecs:service:DesiredCount"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app2.name}"
+  min_capacity       = 2
+  max_capacity       = 5
+}
+
+resource "aws_appautoscaling_policy" "ecs_target_cpu2" {
+  name               = "application-scaling-policy-cpu"
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.ecs_target2.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_target2.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target2.scalable_dimension
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value       = 80
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+  }
+}
+
+resource "aws_appautoscaling_policy" "ecs_target_memory2" {
+  name               = "application-scaling-policy-memory"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_target2.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target2.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target2.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
