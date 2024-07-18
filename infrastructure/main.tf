@@ -34,6 +34,17 @@ resource "aws_subnet" "public" {
   tags                    = { Name = "demo-public-${local.azs_names[count.index]}" }
 }
 
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.us-east-1.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.public.id]
+
+  tags = {
+    Name = "s3-endpoint"
+  }
+}
+
 # --- Internet Gateway ---
 
 resource "aws_internet_gateway" "main" {
@@ -110,6 +121,16 @@ resource "aws_iam_instance_profile" "ecs_node" {
 resource "aws_security_group" "ecs_node_sg" {
   name_prefix = "demo-ecs-node-sg-"
   vpc_id      = aws_vpc.main.id
+
+  dynamic "ingress" {
+    for_each = [80, 443]
+    content {
+      protocol    = "tcp"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
   egress {
     from_port   = 0
@@ -199,6 +220,64 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
   }
 }
 
+# --- ECS Task policies ---
+data "aws_iam_policy_document" "ecs_access_policy_doc" {
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "sqs:SendMessage",
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBClusters",
+      "rds:DescribeDBSnapshots",
+      "rds:DescribeDBClusterSnapshots"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListAllMyBuckets"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_access_policy" {
+  name   = "ecs-task-ssm-policy"
+  role   = aws_iam_role.ecs_task_role.name
+  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
+}
+
+resource "aws_iam_role_policy" "ecs_exec_access_policy" {
+  name   = "ecs-exec-ssm-policy"
+  role   = aws_iam_role.ecs_exec_role.name
+  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
+}
+
 # --- ECS Task Role ---
 
 data "aws_iam_policy_document" "ecs_task_doc" {
@@ -240,9 +319,17 @@ data "aws_ecr_repository" "app1" {
   name = "helloworld1"
 }
 
+output "aws_ecr_repository_app1" {
+  value = data.aws_ecr_repository.app1.repository_url
+}
+
 # --- ECR Repository app2 ---
 data "aws_ecr_repository" "app2" {
   name = "helloworld2"
+}
+
+output "aws_ecr_repository_app2" {
+  value = data.aws_ecr_repository.app2.repository_url
 }
 
 # --- ECS Task Definition app1 ---
@@ -257,9 +344,15 @@ resource "aws_ecs_task_definition" "app1" {
 
   container_definitions = jsonencode([{
     name         = "app1",
-    image        = "${data.aws_ecr_repository.app1.repository_url}:latest",
+    image        = "${data.aws_ecr_repository.app1.repository_url}:${var.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = 80, hostPort = 80 }],
+    secrets = [
+      {
+        name      = "APP1_NAME"
+        valueFrom = aws_ssm_parameter.app1_name.arn
+      }
+    ]
 
     environment = [
       { name = "EXAMPLE", value = "example" }
@@ -289,9 +382,15 @@ resource "aws_ecs_task_definition" "app2" {
 
   container_definitions = jsonencode([{
     name         = "app2",
-    image        = "${data.aws_ecr_repository.app2.repository_url}:latest",
+    image        = "${data.aws_ecr_repository.app2.repository_url}:${var.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = 80, hostPort = 80 }],
+    secrets = [
+      {
+        name      = "APP2_NAME"
+        valueFrom = aws_ssm_parameter.app2_name.arn
+      }
+    ]
 
     environment = [
       { name = "EXAMPLE", value = "example" }
@@ -627,3 +726,5 @@ resource "aws_appautoscaling_policy" "ecs_target_memory2" {
     scale_out_cooldown = 300
   }
 }
+
+# --- ---

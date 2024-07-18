@@ -1,2 +1,3 @@
-fastapi
-uvicorn
+boto3==1.34.144
+fastapi==0.111.1
+uvicorn==0.30.1
