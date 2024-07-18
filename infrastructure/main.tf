@@ -34,6 +34,17 @@ resource "aws_subnet" "public" {
   tags                    = { Name = "demo-public-${local.azs_names[count.index]}" }
 }
 
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.us-east-1.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.public.id]
+
+  tags = {
+    Name = "s3-endpoint"
+  }
+}
+
 # --- Internet Gateway ---
 
 resource "aws_internet_gateway" "main" {
@@ -243,6 +254,16 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
     effect    = "Allow"
     resources = ["*"]
   }
+
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListAllMyBuckets"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "ecs_task_access_policy" {
@@ -298,9 +319,17 @@ data "aws_ecr_repository" "app1" {
   name = "helloworld1"
 }
 
+output "aws_ecr_repository_app1" {
+  value = data.aws_ecr_repository.app1.repository_url
+}
+
 # --- ECR Repository app2 ---
 data "aws_ecr_repository" "app2" {
   name = "helloworld2"
+}
+
+output "aws_ecr_repository_app2" {
+  value = data.aws_ecr_repository.app2.repository_url
 }
 
 # --- ECS Task Definition app1 ---
@@ -315,9 +344,15 @@ resource "aws_ecs_task_definition" "app1" {
 
   container_definitions = jsonencode([{
     name         = "app1",
-    image        = "${data.aws_ecr_repository.app1.repository_url}:latest",
+    image        = "${data.aws_ecr_repository.app1.repository_url}:${var.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = 80, hostPort = 80 }],
+    secrets = [
+      {
+        name      = "APP1_NAME"
+        valueFrom = aws_ssm_parameter.app1_name.arn
+      }
+    ]
 
     environment = [
       { name = "EXAMPLE", value = "example" }
@@ -347,9 +382,15 @@ resource "aws_ecs_task_definition" "app2" {
 
   container_definitions = jsonencode([{
     name         = "app2",
-    image        = "${data.aws_ecr_repository.app2.repository_url}:latest",
+    image        = "${data.aws_ecr_repository.app2.repository_url}:${var.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = 80, hostPort = 80 }],
+    secrets = [
+      {
+        name      = "APP2_NAME"
+        valueFrom = aws_ssm_parameter.app2_name.arn
+      }
+    ]
 
     environment = [
       { name = "EXAMPLE", value = "example" }
