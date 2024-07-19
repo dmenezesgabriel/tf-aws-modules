@@ -34,6 +34,16 @@ resource "aws_subnet" "public" {
   tags                    = { Name = "demo-public-${local.azs_names[count.index]}" }
 }
 
+resource "aws_subnet" "private" {
+  count             = local.azs_count
+  vpc_id            = aws_vpc.main.id
+  availability_zone = local.azs_names[count.index]
+  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, 100 + count.index)
+  tags = {
+    Name = "demo-private-${local.azs_names[count.index]}"
+  }
+}
+
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.us-east-1.s3"
@@ -45,6 +55,22 @@ resource "aws_vpc_endpoint" "s3" {
   }
 }
 
+# --- Nat Gateway ---
+resource "aws_nat_gateway" "main" {
+  count         = local.azs_count
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+  tags = {
+    Name = "demo-nat-${count.index}"
+  }
+}
+
+
+resource "aws_eip" "nat" {
+  count      = local.azs_count
+  depends_on = [aws_internet_gateway.main]
+  tags       = { Name = "demo-eip-${local.azs_names[count.index]}" }
+}
 # --- Internet Gateway ---
 
 resource "aws_internet_gateway" "main" {
@@ -52,11 +78,7 @@ resource "aws_internet_gateway" "main" {
   tags   = { Name = "demo-igw" }
 }
 
-resource "aws_eip" "main" {
-  count      = local.azs_count
-  depends_on = [aws_internet_gateway.main]
-  tags       = { Name = "demo-eip-${local.azs_names[count.index]}" }
-}
+
 
 # --- Public Route Table ---
 # Load Balancer requires at least two subnets created in different
@@ -78,6 +100,24 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# --- Private Route Table ---
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "demo-rt-private"
+  }
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[0].id
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  count          = local.azs_count
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private.id
+}
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
@@ -125,18 +165,20 @@ resource "aws_security_group" "ecs_node_sg" {
   dynamic "ingress" {
     for_each = [80, 443]
     content {
-      protocol    = "tcp"
-      from_port   = ingress.value
-      to_port     = ingress.value
-      cidr_blocks = ["0.0.0.0/0"]
+      protocol         = "tcp"
+      from_port        = ingress.value
+      to_port          = ingress.value
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
     }
   }
 
   egress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 65535
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
@@ -166,7 +208,7 @@ resource "aws_launch_template" "ecs_ec2" {
 
 resource "aws_autoscaling_group" "ecs" {
   name_prefix               = "demo-ecs-asg-"
-  vpc_zone_identifier       = aws_subnet.public[*].id
+  vpc_zone_identifier       = aws_subnet.private[*].id
   min_size                  = 2
   max_size                  = 8
   health_check_grace_period = 0
@@ -264,6 +306,14 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
     effect    = "Allow"
     resources = ["*"]
   }
+
+  statement {
+    actions = [
+      "cognito-idp:AdminGetUser"
+    ]
+    effect    = "Allow"
+    resources = ["arn:aws:cognito-idp:us-east-1:717395713637:userpool/us-east-1_qqG13H1Q0"]
+  }
 }
 
 resource "aws_iam_role_policy" "ecs_task_access_policy" {
@@ -351,7 +401,23 @@ resource "aws_ecs_task_definition" "app1" {
       {
         name      = "APP1_NAME"
         valueFrom = aws_ssm_parameter.app1_name.arn
-      }
+      },
+      {
+        name      = "AWS_REGION_NAME"
+        valueFrom = aws_ssm_parameter.aws_region_name.arn
+      },
+      {
+        name      = "AWS_COGNITO_APP_CLIENT_ID"
+        valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
+      },
+      {
+        name      = "AWS_COGNITO_APP_CLIENT_SECRET"
+        valueFrom = aws_ssm_parameter.cognito_app_client_secret.arn
+      },
+      {
+        name      = "AWS_COGNITO_USER_POOL_ID"
+        valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
+      },
     ]
 
     environment = [
@@ -389,7 +455,23 @@ resource "aws_ecs_task_definition" "app2" {
       {
         name      = "APP2_NAME"
         valueFrom = aws_ssm_parameter.app2_name.arn
-      }
+      },
+      {
+        name      = "AWS_REGION_NAME"
+        valueFrom = aws_ssm_parameter.aws_region_name.arn
+      },
+      {
+        name      = "AWS_COGNITO_APP_CLIENT_ID"
+        valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
+      },
+      {
+        name      = "AWS_COGNITO_APP_CLIENT_SECRET"
+        valueFrom = aws_ssm_parameter.cognito_app_client_secret.arn
+      },
+      {
+        name      = "AWS_COGNITO_USER_POOL_ID"
+        valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
+      },
     ]
 
     environment = [
@@ -414,18 +496,22 @@ resource "aws_security_group" "ecs_task" {
   description = "Allow all traffic within the VPC"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [aws_vpc.main.cidr_block]
+  dynamic "ingress" {
+    for_each = [80, 443]
+    content {
+      protocol         = "tcp"
+      from_port        = ingress.value
+      to_port          = ingress.value
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
   }
-
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
@@ -446,7 +532,7 @@ resource "aws_ecs_service" "app1" {
 
   network_configuration {
     security_groups = [aws_security_group.ecs_task.id]
-    subnets         = aws_subnet.public[*].id
+    subnets         = aws_subnet.private[*].id
   }
 
   capacity_provider_strategy {
@@ -483,7 +569,7 @@ resource "aws_ecs_service" "app2" {
 
   network_configuration {
     security_groups = [aws_security_group.ecs_task.id]
-    subnets         = aws_subnet.public[*].id
+    subnets         = aws_subnet.private[*].id
   }
 
   capacity_provider_strategy {
@@ -512,18 +598,20 @@ resource "aws_security_group" "http" {
   dynamic "ingress" {
     for_each = [80, 443]
     content {
-      protocol    = "tcp"
-      from_port   = ingress.value
-      to_port     = ingress.value
-      cidr_blocks = ["0.0.0.0/0"]
+      protocol         = "tcp"
+      from_port        = ingress.value
+      to_port          = ingress.value
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
     }
   }
 
   egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
+    protocol         = "-1"
+    from_port        = 0
+    to_port          = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
@@ -726,5 +814,3 @@ resource "aws_appautoscaling_policy" "ecs_target_memory2" {
     scale_out_cooldown = 300
   }
 }
-
-# --- ---

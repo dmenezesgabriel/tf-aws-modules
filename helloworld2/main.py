@@ -17,6 +17,10 @@ class Config:
     AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN")
     AWS_ENDPOINT_URL = os.getenv("AWS_ENDPOINT_URL")
     AWS_REGION_NAME = os.getenv("AWS_REGION_NAME", "us-east-1")
+    AWS_REGION_NAME = os.getenv("AWS_REGION_NAME")
+    AWS_COGNITO_APP_CLIENT_ID = os.getenv("AWS_COGNITO_APP_CLIENT_ID")
+    AWS_COGNITO_APP_CLIENT_SECRET = os.getenv("AWS_COGNITO_APP_CLIENT_SECRET")
+    AWS_COGNITO_USER_POOL_ID = os.getenv("AWS_COGNITO_USER_POOL_ID")
 
 
 app = FastAPI(
@@ -34,12 +38,6 @@ if not Config.AWS_ENDPOINT_URL:
     aws_access_key_id = credentials.access_key
     aws_secret_access_key = credentials.secret_key
     aws_session_token = credentials.token
-
-
-logger.info(f"key {aws_access_key_id}")
-logger.info(f"secret {aws_secret_access_key}")
-logger.info(f"token {aws_session_token}")
-
 
 try:
     s3_client = boto3.client(

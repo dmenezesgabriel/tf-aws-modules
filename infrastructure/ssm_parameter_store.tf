@@ -10,3 +10,27 @@ resource "aws_ssm_parameter" "app2_name" {
   type  = "String"
   value = "app2"
 }
+
+resource "aws_ssm_parameter" "aws_region_name" {
+  name  = "/general/aws-region-name"
+  type  = "String"
+  value = "us-east-1"
+}
+
+resource "aws_ssm_parameter" "cognito_app_client_id" {
+  name  = "/cognito/cognito_app_client_id"
+  type  = "String"
+  value = aws_cognito_user_pool_client.main.id
+}
+
+resource "aws_ssm_parameter" "cognito_app_client_secret" {
+  name  = "/cognito/cognito_app_client_secret"
+  type  = "String"
+  value = aws_cognito_user_pool_client.main.client_secret
+}
+
+resource "aws_ssm_parameter" "cognito_user_pool_id" {
+  name  = "/cognito/cognito_app_pool_id"
+  type  = "String"
+  value = aws_cognito_user_pool.main.id
+}

@@ -16,7 +16,10 @@ class Config:
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN")
     AWS_ENDPOINT_URL = os.getenv("AWS_ENDPOINT_URL")
-    AWS_REGION_NAME = os.getenv("AWS_REGION_NAME", "us-east-1")
+    AWS_REGION_NAME = os.getenv("AWS_REGION_NAME")
+    AWS_COGNITO_APP_CLIENT_ID = os.getenv("AWS_COGNITO_APP_CLIENT_ID")
+    AWS_COGNITO_APP_CLIENT_SECRET = os.getenv("AWS_COGNITO_APP_CLIENT_SECRET")
+    AWS_COGNITO_USER_POOL_ID = os.getenv("AWS_COGNITO_USER_POOL_ID")
 
 
 app = FastAPI(
@@ -35,12 +38,6 @@ if not Config.AWS_ENDPOINT_URL:
     aws_secret_access_key = credentials.secret_key
     aws_session_token = credentials.token
 
-
-logger.info(f"key {aws_access_key_id}")
-logger.info(f"secret {aws_secret_access_key}")
-logger.info(f"token {aws_session_token}")
-
-
 try:
     s3_client = boto3.client(
         "s3",
@@ -52,7 +49,21 @@ try:
     )
     logger.info("S3 client connected successfully.")
 except Exception as e:
-    logger.error(f"Failed to create s3 client: {e}")
+    logger.error(f"Failed to create S3 client: {e}")
+    raise
+
+try:
+    cognito_client = boto3.client(
+        "cognito-idp",
+        endpoint_url=Config.AWS_ENDPOINT_URL,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
+        region_name=Config.AWS_REGION_NAME,
+    )
+    logger.info("Cognito client connected successfully.")
+except Exception as e:
+    logger.error(f"Failed to create cognito client: {e}")
     raise
 
 
@@ -75,6 +86,19 @@ def list_buckets():
     except Exception as e:
         logger.error(f"Failed to list S3 buckets: {e}")
         return {"message": "Could not list S3 buckets"}
+
+
+@router.post("/user")
+def check_user_exists(email: str):
+    try:
+        response = cognito_client.admin_get_user(
+            UserPoolId=Config.AWS_COGNITO_USER_POOL_ID, Username=email
+        )
+        logger.info(f"cognito response: {response}")
+        return {"message": response}
+    except Exception as e:
+        logger.error(f"Failed to check user pool: {e}")
+        return {"message": "Could not check user pool"}
 
 
 app.include_router(router, prefix=Config.APP_PREFIX)
