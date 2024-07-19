@@ -309,10 +309,18 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
 
   statement {
     actions = [
-      "cognito-idp:AdminGetUser"
+      "cognito-idp:SignUp",
+      "cognito-idp:ConfirmSignUp",
+      "cognito-idp:ResendConfirmationCode",
+      "cognito-idp:AdminGetUser",
+      "cognito-idp:InitiateAuth",
+      "cognito-idp:ForgotPassword",
+      "cognito-idp:ConfirmForgotPassword",
+      "cognito-idp:ChangePassword",
+      "cognito-idp:GlobalSignOut"
     ]
     effect    = "Allow"
-    resources = ["arn:aws:cognito-idp:us-east-1:717395713637:userpool/us-east-1_qqG13H1Q0"]
+    resources = [aws_cognito_user_pool.main.arn]
   }
 }
 

@@ -98,7 +98,7 @@ def check_user_exists(email: str):
         return {"message": response}
     except Exception as e:
         logger.error(f"Failed to check user pool: {e}")
-        return {"message": "Could not check user pool"}
+        return {"message": f"Could not check user pool: {e}"}
 
 
 app.include_router(router, prefix=Config.APP_PREFIX)
