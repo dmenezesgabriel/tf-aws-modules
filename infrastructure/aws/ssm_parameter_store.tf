@@ -23,12 +23,6 @@ resource "aws_ssm_parameter" "cognito_app_client_id" {
   value = aws_cognito_user_pool_client.main.id
 }
 
-resource "aws_ssm_parameter" "cognito_app_client_secret" {
-  name  = "/cognito/cognito_app_client_secret"
-  type  = "String"
-  value = aws_cognito_user_pool_client.main.client_secret
-}
-
 resource "aws_ssm_parameter" "cognito_user_pool_id" {
   name  = "/cognito/cognito_app_pool_id"
   type  = "String"

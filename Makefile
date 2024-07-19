@@ -48,11 +48,11 @@ force-deploy:
 
 terraform-apply: get-tag
 	@echo "Applying Terraform with image tag $(shell cat $(TAG_FILE))..."
-	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure apply -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
+	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure/aws apply -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
 
 terraform-destroy: get-tag
 	@echo "Applying Terraform with image tag $(shell cat $(TAG_FILE))..."
-	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure destroy -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
+	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure/aws destroy -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
 
 test-dns:
 	@echo "Testing DNS resolution for ECR endpoint..."

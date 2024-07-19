@@ -419,10 +419,6 @@ resource "aws_ecs_task_definition" "app1" {
         valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
       },
       {
-        name      = "AWS_COGNITO_APP_CLIENT_SECRET"
-        valueFrom = aws_ssm_parameter.cognito_app_client_secret.arn
-      },
-      {
         name      = "AWS_COGNITO_USER_POOL_ID"
         valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
       },
@@ -471,10 +467,6 @@ resource "aws_ecs_task_definition" "app2" {
       {
         name      = "AWS_COGNITO_APP_CLIENT_ID"
         valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
-      },
-      {
-        name      = "AWS_COGNITO_APP_CLIENT_SECRET"
-        valueFrom = aws_ssm_parameter.cognito_app_client_secret.arn
       },
       {
         name      = "AWS_COGNITO_USER_POOL_ID"
