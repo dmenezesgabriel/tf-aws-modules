@@ -1,9 +1,9 @@
 import logging
 
-import boto3  # type: ignore
 import botocore
 import botocore.exceptions
 from pydantic import EmailStr
+from src.adapter.aws import AWSClientAdapter
 from src.adapter.dto import (
     ChangePassword,
     ConfirmForgotPassword,
@@ -17,29 +17,13 @@ logger = logging.getLogger(__name__)
 config = get_config()
 
 
-class AWSCognitoAdapter:
-    def __init__(self):
-        self.__client = self._create_client()
-
-    def _create_client(self):
-        try:
-            client = boto3.client(
-                "cognito-idp",
-                endpoint_url=config.AWS_ENDPOINT_URL,
-                aws_access_key_id=config.aws_access_key_id,
-                aws_secret_access_key=config.aws_secret_access_key,
-                aws_session_token=config.aws_session_token,
-                region_name=config.AWS_REGION_NAME,
-            )
-            logger.info("Cognito client connected successfully.")
-            return client
-        except Exception as error:
-            logger.error(f"Failed to create cognito client: {error}")
-            raise
+class AWSCognitoAdapter(AWSClientAdapter):
+    def __init__(self, client_type="cognito-idp"):
+        super().__init__(client_type=client_type)
 
     def user_signup(self, user: UserSignup):
         try:
-            response = self.__client.sign_up(
+            response = self.client.sign_up(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID,
                 Username=user.email,
                 Password=user.password,
@@ -65,7 +49,7 @@ class AWSCognitoAdapter:
 
     def verify_account(self, data: UserVerify):
         try:
-            response = self.__client.confirm_sign_up(
+            response = self.client.confirm_sign_up(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID,
                 Username=data.email,
                 ConfirmationCode=data.confirmation_code,
@@ -80,7 +64,7 @@ class AWSCognitoAdapter:
 
     def resend_confirmation_code(self, email: EmailStr):
         try:
-            response = self.__client.resend_confirmation_code(
+            response = self.client.resend_confirmation_code(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID, Username=email
             )
             return response
@@ -93,7 +77,7 @@ class AWSCognitoAdapter:
 
     def check_user_exists(self, email: EmailStr):
         try:
-            response = self.__client.admin_get_user(
+            response = self.client.admin_get_user(
                 UserPoolId=config.AWS_COGNITO_USER_POOL_ID, Username=email
             )
             return response
@@ -106,7 +90,7 @@ class AWSCognitoAdapter:
 
     def user_signin(self, data: UserSignin):
         try:
-            response = self.__client.initiate_auth(
+            response = self.client.initiate_auth(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID,
                 AuthFlow="USER_PASSWORD_AUTH",
                 AuthParameters={
@@ -124,7 +108,7 @@ class AWSCognitoAdapter:
 
     def forgot_password(self, email: EmailStr):
         try:
-            response = self.__client.forgot_password(
+            response = self.client.forgot_password(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID, Username=email
             )
             return response
@@ -137,7 +121,7 @@ class AWSCognitoAdapter:
 
     def confirm_forgot_password(self, data: ConfirmForgotPassword):
         try:
-            response = self.__client.confirm_forgot_password(
+            response = self.client.confirm_forgot_password(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID,
                 Username=data.email,
                 ConfirmationCode=data.confirmation_code,
@@ -153,7 +137,7 @@ class AWSCognitoAdapter:
 
     def change_password(self, data: ChangePassword):
         try:
-            response = self.__client.change_password(
+            response = self.client.change_password(
                 PreviousPassword=data.old_password,
                 ProposedPassword=data.new_password,
                 AccessToken=data.access_token,
@@ -168,7 +152,7 @@ class AWSCognitoAdapter:
 
     def new_access_token(self, refresh_token: str):
         try:
-            response = self.__client.initiate_auth(
+            response = self.client.initiate_auth(
                 ClientId=config.AWS_COGNITO_APP_CLIENT_ID,
                 AuthFlow="REFRESH_TOKEN_AUTH",
                 AuthParameters={
@@ -185,7 +169,7 @@ class AWSCognitoAdapter:
 
     def logout(self, access_token: str):
         try:
-            response = self.__client.global_sign_out(AccessToken=access_token)
+            response = self.client.global_sign_out(AccessToken=access_token)
             return response
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
