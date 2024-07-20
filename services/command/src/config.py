@@ -2,8 +2,7 @@ import os
 
 
 class Config:
-    APP_PREFIX = "/app1"
-    APP_NAME = os.getenv("APP1_NAME")
+    APP_PATH = "/command"
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN")

@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
-    docs_url=config.APP_PREFIX + "/docs",
-    openapi_url=config.APP_PREFIX + "/openapi.json",
+    docs_url=config.APP_PATH + "/docs",
+    openapi_url=config.APP_PATH + "/openapi.json",
 )
 router = APIRouter()
 
@@ -23,15 +23,6 @@ class AWSS3Adapter(AWSClientAdapter):
 
 
 aws_s3_adapter = AWSS3Adapter()
-
-
-@router.get("/")
-def read_root():
-    try:
-        return {"message": f"Hello World from {config.APP_NAME}"}
-    except Exception as e:
-        logger.error(f"Failed to retrieve parameter /app1_name: {e}")
-        return {"message": "Could not access the ssm parameter store"}
 
 
 @router.get(
@@ -48,4 +39,4 @@ def list_buckets():
         return {"message": "Could not list S3 buckets"}
 
 
-app.include_router(router, prefix=config.APP_PREFIX)
+app.include_router(router, prefix=config.APP_PATH)

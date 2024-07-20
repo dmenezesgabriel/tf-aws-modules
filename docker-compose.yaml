@@ -1,23 +1,23 @@
 services:
-  app1:
-    build: ./helloworld1
+  auth:
+    build: ./services/auth
     ports:
       - "8001:80"
     env_file:
       - ./.env
     command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     volumes:
-      - ./helloworld1:/app/
+      - ./services/auth:/app/
     networks:
       - app-network
-  app2:
-    build: ./helloworld2
+  command:
+    build: ./services/command
     ports:
       - "8002:80"
 
     command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     volumes:
-      - ./helloworld2:/app/
+      - ./services/command:/app/
     env_file:
       - ./.env
     networks:
