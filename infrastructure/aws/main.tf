@@ -5,8 +5,8 @@ terraform {
 }
 
 provider "aws" {
-  profile = "default"
-  region  = "us-east-1"
+  profile = var.aws_profile
+  region  = var.aws_region_name
 }
 
 # --- VPC ---
@@ -22,7 +22,7 @@ resource "aws_vpc" "main" {
   cidr_block           = "10.10.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags                 = { Name = "demo-vpc" }
+  tags                 = { Name = "${var.project_name}-vpc" }
 }
 
 resource "aws_subnet" "public" {
@@ -31,7 +31,7 @@ resource "aws_subnet" "public" {
   availability_zone       = local.azs_names[count.index]
   cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, 10 + count.index)
   map_public_ip_on_launch = true
-  tags                    = { Name = "demo-public-${local.azs_names[count.index]}" }
+  tags                    = { Name = "${var.project_name}-public-${local.azs_names[count.index]}" }
 }
 
 resource "aws_subnet" "private" {
@@ -40,7 +40,7 @@ resource "aws_subnet" "private" {
   availability_zone = local.azs_names[count.index]
   cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, 100 + count.index)
   tags = {
-    Name = "demo-private-${local.azs_names[count.index]}"
+    Name = "${var.project_name}-private-${local.azs_names[count.index]}"
   }
 }
 
@@ -61,7 +61,7 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
   tags = {
-    Name = "demo-nat-${count.index}"
+    Name = "${var.project_name}-nat-${count.index}"
   }
 }
 
@@ -69,13 +69,13 @@ resource "aws_nat_gateway" "main" {
 resource "aws_eip" "nat" {
   count      = local.azs_count
   depends_on = [aws_internet_gateway.main]
-  tags       = { Name = "demo-eip-${local.azs_names[count.index]}" }
+  tags       = { Name = "${var.project_name}-eip-${local.azs_names[count.index]}" }
 }
 # --- Internet Gateway ---
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "demo-igw" }
+  tags   = { Name = "${var.project_name}-igw" }
 }
 
 
@@ -86,7 +86,7 @@ resource "aws_internet_gateway" "main" {
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "demo-rt-public" }
+  tags   = { Name = "${var.project_name}-rt-public" }
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -104,7 +104,7 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = "demo-rt-private"
+    Name = "${var.project_name}-rt-private"
   }
 
   route {
@@ -121,7 +121,7 @@ resource "aws_route_table_association" "private" {
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
-  name = "demo-cluster"
+  name = "${var.project_name}-cluster"
 }
 
 # --- ECS Node Role ---
@@ -139,7 +139,7 @@ data "aws_iam_policy_document" "ecs_node_doc" {
 }
 
 resource "aws_iam_role" "ecs_node_role" {
-  name_prefix        = "demo-ecs-node-role"
+  name_prefix        = "${var.project_name}-ecs-node-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_node_doc.json
 }
 
@@ -149,7 +149,7 @@ resource "aws_iam_role_policy_attachment" "ecs_node_role_policy" {
 }
 
 resource "aws_iam_instance_profile" "ecs_node" {
-  name_prefix = "demo-ecs-node-profile"
+  name_prefix = "${var.project_name}-ecs-node-profile"
   path        = "/ecs/instance/"
   role        = aws_iam_role.ecs_node_role.name
 }
@@ -159,7 +159,7 @@ resource "aws_iam_instance_profile" "ecs_node" {
 # pull image to start service later)
 
 resource "aws_security_group" "ecs_node_sg" {
-  name_prefix = "demo-ecs-node-sg-"
+  name_prefix = "${var.project_name}-ecs-node-sg-"
   vpc_id      = aws_vpc.main.id
 
   dynamic "ingress" {
@@ -189,9 +189,9 @@ data "aws_ssm_parameter" "ecs_node_ami" {
 }
 
 resource "aws_launch_template" "ecs_ec2" {
-  name_prefix            = "demo-ecs-ec2-"
+  name_prefix            = "${var.project_name}-ecs-ec2-"
   image_id               = data.aws_ssm_parameter.ecs_node_ami.value
-  instance_type          = "t2.micro"
+  instance_type          = var.ec2_instance_type
   vpc_security_group_ids = [aws_security_group.ecs_node_sg.id]
 
   iam_instance_profile { arn = aws_iam_instance_profile.ecs_node.arn }
@@ -207,7 +207,7 @@ resource "aws_launch_template" "ecs_ec2" {
 # --- ECS ASG ---
 
 resource "aws_autoscaling_group" "ecs" {
-  name_prefix               = "demo-ecs-asg-"
+  name_prefix               = "${var.project_name}-ecs-asg-"
   vpc_zone_identifier       = aws_subnet.private[*].id
   min_size                  = 2
   max_size                  = 8
@@ -222,7 +222,7 @@ resource "aws_autoscaling_group" "ecs" {
 
   tag {
     key                 = "Name"
-    value               = "demo-ecs-cluster"
+    value               = "${var.project_name}-ecs-cluster"
     propagate_at_launch = true
   }
 
@@ -236,7 +236,7 @@ resource "aws_autoscaling_group" "ecs" {
 # --- ECS Capacity Provider ---
 
 resource "aws_ecs_capacity_provider" "main" {
-  name = "demo-ecs-ec2"
+  name = "${var.project_name}-ecs-ec2"
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.ecs.arn
@@ -351,12 +351,12 @@ data "aws_iam_policy_document" "ecs_task_doc" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name_prefix        = "demo-ecs-task-role"
+  name_prefix        = "${var.project_name}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
 }
 
 resource "aws_iam_role" "ecs_exec_role" {
-  name_prefix        = "demo-ecs-exec-role"
+  name_prefix        = "${var.project_name}-ecs-exec-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
 }
 
@@ -368,32 +368,25 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy" {
 # --- Cloud Watch Logs ---
 
 resource "aws_cloudwatch_log_group" "ecs" {
-  name              = "/ecs/demo"
+  name              = "/ecs/${var.project_name}"
   retention_in_days = 14
 }
 
-# --- ECR Repository app1 ---
-data "aws_ecr_repository" "app1" {
-  name = "helloworld1"
+# --- ECR Repository ---
+data "aws_ecr_repository" "apps" {
+  for_each = var.applications
+  name     = each.value.aws_ecr_repository_name
 }
 
-output "aws_ecr_repository_app1" {
-  value = data.aws_ecr_repository.app1.repository_url
+output "aws_ecr_repository_apps" {
+  value = { for k, v in data.aws_ecr_repository.apps : k => v.repository_url }
 }
 
-# --- ECR Repository app2 ---
-data "aws_ecr_repository" "app2" {
-  name = "helloworld2"
-}
+# --- ECS Task Definition ---
 
-output "aws_ecr_repository_app2" {
-  value = data.aws_ecr_repository.app2.repository_url
-}
-
-# --- ECS Task Definition app1 ---
-
-resource "aws_ecs_task_definition" "app1" {
-  family             = "demo-app1"
+resource "aws_ecs_task_definition" "apps" {
+  for_each           = var.applications
+  family             = "${var.project_name}-${each.key}"
   task_role_arn      = aws_iam_role.ecs_task_role.arn
   execution_role_arn = aws_iam_role.ecs_exec_role.arn
   network_mode       = "awsvpc"
@@ -401,15 +394,11 @@ resource "aws_ecs_task_definition" "app1" {
   memory             = 256
 
   container_definitions = jsonencode([{
-    name         = "app1",
-    image        = "${data.aws_ecr_repository.app1.repository_url}:${var.image_tag}",
+    name         = each.value.name,
+    image        = "${data.aws_ecr_repository.apps[each.key].repository_url}:${var.image_tag}",
     essential    = true,
-    portMappings = [{ containerPort = 80, hostPort = 80 }],
+    portMappings = [{ containerPort = each.value.port, hostPort = each.value.port }],
     secrets = [
-      {
-        name      = "APP1_NAME"
-        valueFrom = aws_ssm_parameter.app1_name.arn
-      },
       {
         name      = "AWS_REGION_NAME"
         valueFrom = aws_ssm_parameter.aws_region_name.arn
@@ -431,59 +420,9 @@ resource "aws_ecs_task_definition" "app1" {
     logConfiguration = {
       logDriver = "awslogs",
       options = {
-        "awslogs-region"        = "us-east-1",
+        "awslogs-region"        = var.aws_region_name,
         "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
-        "awslogs-stream-prefix" = "app1"
-      }
-    },
-  }])
-}
-
-
-# --- ECS Task Definition app2 ---
-
-resource "aws_ecs_task_definition" "app2" {
-  family             = "demo-app2"
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
-  execution_role_arn = aws_iam_role.ecs_exec_role.arn
-  network_mode       = "awsvpc"
-  cpu                = 256
-  memory             = 256
-
-  container_definitions = jsonencode([{
-    name         = "app2",
-    image        = "${data.aws_ecr_repository.app2.repository_url}:${var.image_tag}",
-    essential    = true,
-    portMappings = [{ containerPort = 80, hostPort = 80 }],
-    secrets = [
-      {
-        name      = "APP2_NAME"
-        valueFrom = aws_ssm_parameter.app2_name.arn
-      },
-      {
-        name      = "AWS_REGION_NAME"
-        valueFrom = aws_ssm_parameter.aws_region_name.arn
-      },
-      {
-        name      = "AWS_COGNITO_APP_CLIENT_ID"
-        valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
-      },
-      {
-        name      = "AWS_COGNITO_USER_POOL_ID"
-        valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
-      },
-    ]
-
-    environment = [
-      { name = "EXAMPLE", value = "example" }
-    ]
-
-    logConfiguration = {
-      logDriver = "awslogs",
-      options = {
-        "awslogs-region"        = "us-east-1",
-        "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
-        "awslogs-stream-prefix" = "app2"
+        "awslogs-stream-prefix" = each.key
       }
     },
   }])
@@ -492,7 +431,7 @@ resource "aws_ecs_task_definition" "app2" {
 # --- ECS Service ---
 
 resource "aws_security_group" "ecs_task" {
-  name_prefix = "ecs-task-sg-"
+  name_prefix = "${var.project_name}-ecs-task-sg-"
   description = "Allow all traffic within the VPC"
   vpc_id      = aws_vpc.main.id
 
@@ -515,56 +454,20 @@ resource "aws_security_group" "ecs_task" {
   }
 }
 
-# --- ECS Service app1 ---
-resource "aws_ecs_service" "app1" {
-  name            = "app1"
+# --- ECS Service ---
+resource "aws_ecs_service" "apps" {
+  for_each        = var.applications
+  name            = each.value.name
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app1.arn
+  task_definition = aws_ecs_task_definition.apps[each.key].arn
   desired_count   = 2
 
-  depends_on = [aws_lb_target_group.app1, aws_lb_listener_rule.app1]
+  depends_on = [aws_lb_target_group.apps, aws_lb_listener_rule.apps]
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.app1.arn
-    container_name   = "app1"
-    container_port   = 80
-  }
-
-  network_configuration {
-    security_groups = [aws_security_group.ecs_task.id]
-    subnets         = aws_subnet.private[*].id
-  }
-
-  capacity_provider_strategy {
-    capacity_provider = aws_ecs_capacity_provider.main.name
-    base              = 1
-    weight            = 100
-  }
-
-  ordered_placement_strategy {
-    type  = "spread"
-    field = "attribute:ecs.availability-zone"
-  }
-
-  lifecycle {
-    ignore_changes = [desired_count]
-  }
-}
-
-# --- ECS Service app2 ---
-
-resource "aws_ecs_service" "app2" {
-  name            = "app2"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app2.arn
-  desired_count   = 2
-
-  depends_on = [aws_lb_target_group.app2, aws_lb_listener_rule.app2]
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app2.arn
-    container_name   = "app2"
-    container_port   = 80
+    target_group_arn = aws_lb_target_group.apps[each.key].arn
+    container_name   = each.value.name
+    container_port   = each.value.port
   }
 
   network_configuration {
@@ -591,7 +494,7 @@ resource "aws_ecs_service" "app2" {
 # --- ALB ---
 
 resource "aws_security_group" "http" {
-  name_prefix = "http-sg-"
+  name_prefix = "${var.project_name}-http-sg-"
   description = "Allow all HTTP/HTTPS traffic from public"
   vpc_id      = aws_vpc.main.id
 
@@ -616,47 +519,24 @@ resource "aws_security_group" "http" {
 }
 
 resource "aws_lb" "main" {
-  name               = "demo-alb"
+  name               = "${var.project_name}-alb"
   load_balancer_type = "application"
   subnets            = aws_subnet.public[*].id
   security_groups    = [aws_security_group.http.id]
 }
 
-# --- ALB app1 ---
-
-resource "aws_lb_target_group" "app1" {
-  name_prefix = "app1-"
+resource "aws_lb_target_group" "apps" {
+  for_each    = var.applications
+  name        = each.value.name
   vpc_id      = aws_vpc.main.id
   protocol    = "HTTP"
-  port        = 80
+  port        = each.value.port
   target_type = "ip"
 
   health_check {
     enabled             = true
-    path                = "/app1/"
-    port                = 80
-    matcher             = 200
-    interval            = 10
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-  }
-}
-
-
-# --- ALB app2 ---
-
-resource "aws_lb_target_group" "app2" {
-  name_prefix = "app2-"
-  vpc_id      = aws_vpc.main.id
-  protocol    = "HTTP"
-  port        = 80
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    path                = "/app2/"
-    port                = 80
+    path                = each.value.health_path
+    port                = each.value.port
     matcher             = 200
     interval            = 10
     timeout             = 5
@@ -682,38 +562,20 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# --- ALB Listeners app1 ---
+# --- ALB Listeners---
 
-resource "aws_lb_listener_rule" "app1" {
+resource "aws_lb_listener_rule" "apps" {
+  for_each     = var.applications
   listener_arn = aws_lb_listener.http.arn
-  priority     = 10
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.app1.arn
+    target_group_arn = aws_lb_target_group.apps[each.key].arn
   }
 
   condition {
     path_pattern {
-      values = ["/app1*"]
-    }
-  }
-}
-
-# --- ALB Listeners app2 ---
-
-resource "aws_lb_listener_rule" "app2" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 20
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app2.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/app2*"]
+      values = ["${each.value.path}*"]
     }
   }
 }
@@ -725,20 +587,22 @@ output "alb_url" {
 
 # --- ECS Service Auto Scaling app 1---
 
-resource "aws_appautoscaling_target" "ecs_target1" {
+resource "aws_appautoscaling_target" "ecs_target" {
+  for_each           = var.applications
   service_namespace  = "ecs"
   scalable_dimension = "ecs:service:DesiredCount"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app1.name}"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.apps[each.key].name}"
   min_capacity       = 2
   max_capacity       = 5
 }
 
-resource "aws_appautoscaling_policy" "ecs_target_cpu1" {
+resource "aws_appautoscaling_policy" "ecs_target_cpu" {
+  for_each           = var.applications
   name               = "application-scaling-policy-cpu"
   policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_target1.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_target1.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target1.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target[each.key].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target[each.key].scalable_dimension
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -751,58 +615,13 @@ resource "aws_appautoscaling_policy" "ecs_target_cpu1" {
   }
 }
 
-resource "aws_appautoscaling_policy" "ecs_target_memory1" {
+resource "aws_appautoscaling_policy" "ecs_target_memory" {
+  for_each           = var.applications
   name               = "application-scaling-policy-memory"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target1.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target1.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target1.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-    }
-
-    target_value       = 80
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 300
-  }
-}
-
-# --- ECS Service Auto Scaling app 2---
-
-resource "aws_appautoscaling_target" "ecs_target2" {
-  service_namespace  = "ecs"
-  scalable_dimension = "ecs:service:DesiredCount"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app2.name}"
-  min_capacity       = 2
-  max_capacity       = 5
-}
-
-resource "aws_appautoscaling_policy" "ecs_target_cpu2" {
-  name               = "application-scaling-policy-cpu"
-  policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_target2.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_target2.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target2.scalable_dimension
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-
-    target_value       = 80
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 300
-  }
-}
-
-resource "aws_appautoscaling_policy" "ecs_target_memory2" {
-  name               = "application-scaling-policy-memory"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target2.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target2.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target2.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target[each.key].service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {

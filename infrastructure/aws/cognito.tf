@@ -1,6 +1,6 @@
 # --- AWS Cognito ---
 resource "aws_cognito_user_pool" "main" {
-  name = "demo-user-pool"
+  name = "${var.project_name}-user-pool"
 
   password_policy {
     minimum_length    = 8
@@ -65,7 +65,7 @@ resource "aws_cognito_user_pool" "main" {
 }
 
 resource "aws_cognito_user_pool_client" "main" {
-  name            = "demo-app-client"
+  name            = "${var.project_name}-app-client"
   user_pool_id    = aws_cognito_user_pool.main.id
   generate_secret = false
 
