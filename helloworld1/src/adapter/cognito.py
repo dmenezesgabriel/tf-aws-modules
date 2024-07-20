@@ -57,7 +57,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -72,7 +72,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -85,7 +85,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -98,7 +98,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -116,7 +116,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -129,7 +129,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -145,7 +145,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -160,7 +160,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -177,7 +177,7 @@ class AWSCognitoAdapter:
             )
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
@@ -188,7 +188,7 @@ class AWSCognitoAdapter:
             response = self.__client.global_sign_out(AccessToken=access_token)
             return response
         except botocore.exceptions.ClientError as error:
-            logger.error(str(error.response))
+            logger.error(error.response)
             return error.response
         except Exception as error:
             logger.error(f"SignUp error: {error}")
