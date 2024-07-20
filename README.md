@@ -8,3 +8,4 @@
 - [building-an-authentication-api-with-aws-cognito-and-fastapi](https://timothy.hashnode.dev/building-an-authentication-api-with-aws-cognito-and-fastapi)
 - [fastapi-with-aws-cognito](https://github.com/robotlearner001/blog/blob/main/fastapi-with-aws-cognito/)
 - [ecs-with-fargate-terraform](https://cs.fyi/guide/ecs-with-fargate-terraform)
+  = [verifying-a-json-web-token-from-cognito-in-python-and-fastapi](https://www.angelospanag.me/blog/verifying-a-json-web-token-from-cognito-in-python-and-fastapi)
