@@ -220,7 +220,7 @@ resource "aws_autoscaling_group" "ecs" {
   name_prefix               = "${var.project_name}-ecs-asg-"
   vpc_zone_identifier       = aws_subnet.private[*].id
   min_size                  = 2
-  max_size                  = 8
+  max_size                  = 4
   health_check_grace_period = 0
   health_check_type         = "EC2"
   protect_from_scale_in     = false
@@ -379,7 +379,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy" {
 
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
-  retention_in_days = 14
+  retention_in_days = 7
 }
 
 # --- ECR Repository ---

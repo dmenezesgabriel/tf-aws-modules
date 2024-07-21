@@ -201,3 +201,4 @@ cython_debug/
 #.idea/
 
 localstack_volume/
+postgres_data/

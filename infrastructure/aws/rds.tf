@@ -4,9 +4,9 @@ resource "aws_db_instance" "main" {
   engine                 = "postgres"
   engine_version         = "16.3"
   instance_class         = "db.t3.micro"
-  db_name                = var.db_instance_credentials.db_name
-  username               = var.db_instance_credentials.username
-  password               = var.db_instance_credentials.password
+  db_name                = var.db_instance_db_name
+  username               = var.db_instance_username
+  password               = var.db_instance_password
   publicly_accessible    = false
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.rds_sg.id]

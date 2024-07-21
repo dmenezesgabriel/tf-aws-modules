@@ -17,11 +17,7 @@ resource "aws_ssm_parameter" "cognito_user_pool_id" {
   value = aws_cognito_user_pool.main.id
 }
 
-resource "aws_ssm_parameter" "rds_endpoint" {
-  name  = "/rds/postgres/endpoint_url"
-  type  = "String"
-  value = aws_db_instance.main.endpoint
-}
+
 
 resource "aws_ssm_parameter" "ec2_bastion_host_private_key" {
   name  = "/ec2/bastion/ec2_bastion_host_private_key"
@@ -39,4 +35,28 @@ resource "aws_ssm_parameter" "bastion_public_ip" {
   name  = "/ec2/bastion/ec2_bastion_public_ip"
   type  = "String"
   value = aws_instance.bastion_host.public_ip
+}
+
+resource "aws_ssm_parameter" "rds_endpoint" {
+  name  = "/rds/postgres/endpoint_url"
+  type  = "String"
+  value = aws_db_instance.main.endpoint
+}
+
+resource "aws_ssm_parameter" "db_instance_db_name" {
+  name  = "/rds/postgres/endpoint_url"
+  type  = "String"
+  value = var.db_instance_db_name
+}
+
+resource "aws_ssm_parameter" "db_instance_username" {
+  name  = "/rds/postgres/endpoint_url"
+  type  = "String"
+  value = var.db_instance_username
+}
+
+resource "aws_ssm_parameter" "db_instance_password" {
+  name  = "/rds/postgres/endpoint_url"
+  type  = "String"
+  value = var.db_instance_password
 }

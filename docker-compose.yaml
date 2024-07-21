@@ -10,21 +10,45 @@ services:
       - ./services/auth:/app/
     networks:
       - app-network
+
   command:
     build: ./services/command
     ports:
       - "8002:80"
-
     command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     volumes:
       - ./services/command:/app/
+    depends_on:
+      - postgres
     env_file:
       - ./.env
     networks:
       - app-network
 
+  command-migrations:
+    build: ./services/command
+    volumes:
+      - ./services/command:/app/
+    env_file:
+      - .env
+    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; alembic -c migrations/alembic/alembic.ini upgrade head"
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16.0-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DATABASE=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
   localstack:
-    container_name: "${LOCALSTACK_DOCKER_NAME-localstack}"
     image: localstack/localstack:latest
     ports:
       - "127.0.0.1:4566:4566"
