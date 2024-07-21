@@ -49,3 +49,16 @@ variable "applications" {
     }
   }
 }
+
+variable "db_instance_credentials" {
+  type = object({
+    db_name  = string
+    username = string
+    password = string
+  })
+  default = {
+    db_name  = "postgres"
+    username = "postgres"
+    password = "postgres"
+  }
+}

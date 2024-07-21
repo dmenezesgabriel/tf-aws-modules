@@ -50,3 +50,6 @@ terraform-apply: get-tag
 terraform-destroy: get-tag
 	@echo "Applying Terraform with image tag $(shell cat $(TAG_FILE))..."
 	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure/aws destroy -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
+
+rds-bastion-portforward:
+	ssh -i /path/key.pem -f -N -L 5432:<rds-endpoint>:5432 -p 22 ec2-user@<bastion-ip> -v

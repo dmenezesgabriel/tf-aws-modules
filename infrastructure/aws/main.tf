@@ -1,12 +1,22 @@
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws", version = "5.17.0" }
+    aws = {
+      source  = "hashicorp/aws",
+      version = "5.17.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 3.0"
+    }
   }
 }
 
 provider "aws" {
   profile = var.aws_profile
   region  = var.aws_region_name
+}
+
+provider "tls" {
 }
 
 # --- VPC ---
@@ -410,6 +420,10 @@ resource "aws_ecs_task_definition" "apps" {
       {
         name      = "AWS_COGNITO_USER_POOL_ID"
         valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
+      },
+      {
+        name      = "RDS_ENDPOINT"
+        valueFrom = aws_ssm_parameter.rds_endpoint.arn
       },
     ]
 
