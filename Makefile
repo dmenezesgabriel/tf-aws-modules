@@ -29,7 +29,7 @@ login:
 		aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com && break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
 	done
 
-build: get-tag
+build: generate-tag get-tag
 	@echo "Building Docker images..."
 	docker build -t ecs-todo-auth:$(shell cat $(TAG_FILE)) ./services/auth
 	docker build -t ecs-todo-command:$(shell cat $(TAG_FILE)) ./services/command
@@ -47,14 +47,6 @@ push: login build tag
 		docker push $(REPO_COMMAND):$(shell cat $(TAG_FILE)) && \
 		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
 	done
-
-terraform-apply: get-tag
-	@echo "Applying Terraform with image tag $(shell cat $(TAG_FILE))..."
-	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure/aws apply -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
-
-terraform-destroy: get-tag
-	@echo "Applying Terraform with image tag $(shell cat $(TAG_FILE))..."
-	export TF_VAR_image_tag=$(shell cat $(TAG_FILE)); terraform -chdir=infrastructure/aws destroy -var="image_tag=$(shell cat $(TAG_FILE))" --auto-approve
 
 fetch-parameters:
 	@echo "Fetching SSM parameters..."
