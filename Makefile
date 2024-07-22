@@ -72,6 +72,9 @@ cleanup-bastion-key:
 
 rds-portforward: fetch-parameters store-bastion-key execute-ssh
 
+stop-portforward:
+	lsof -ti:5432 | xargs kill -9
+
 create-command-migration:
 	@read -p "Enter migration message: " MESSAGE; \
 	docker compose run --rm command-migrations /bin/bash -c \
