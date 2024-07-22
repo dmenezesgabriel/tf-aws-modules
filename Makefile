@@ -88,15 +88,15 @@ create-command-migration:
 apply-command-migrations:
 	docker compose run --rm command-migrations
 
-terraform-init-%:
+tf-init-%:
 	@echo "Initializing Terraform $*"
 	terraform -chdir=infrastructure/aws/$* init
 
-terraform-validate-%:
+tf-validate-%:
 	@echo "Validating Terraform $*"
 	terraform -chdir=infrastructure/aws/$* validate
 
-terraform-apply-%:
+tf-apply-%:
 	@echo "Applying Terraform $*"
 	@set -e; \
 	for i in $$(seq 1 $(RETRIES)); do \
@@ -104,8 +104,8 @@ terraform-apply-%:
 		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
 	done
 
-terraform-destroy-%:
+tf-destroy-%:
 	@echo "Destroying Terraform $*"
-	terraform -chdir=infrastructure/aws d/$*estroy --auto-approve
+	terraform -chdir=infrastructure/aws/$* destroy --auto-approve
 
-terraform-destroy-all: terraform-destroy-bastion terraform-destroy-job terraform-destroy-ecs terraform-destroy-cognito terraform-destroy-rds terraform-destroy-vpc
+tf-destroy-all: tf-destroy-bastion tf-destroy-job tf-destroy-ecs tf-destroy-cognito tf-destroy-rds tf-destroy-vpc
