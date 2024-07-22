@@ -1,7 +1,13 @@
-resource "aws_ssm_parameter" "rds_endpoint" {
-  name  = "/${var.project_name}/rds/postgres/endpoint_url"
+resource "aws_ssm_parameter" "rds_ionstance_endpoint" {
+  name  = "/${var.project_name}/rds/postgres/rds_instance_endpoint_url"
   type  = "String"
   value = aws_db_instance.main.endpoint
+}
+
+resource "aws_ssm_parameter" "rds_instance_host" {
+  name  = "/${var.project_name}/rds/postgres/rds_instance_host"
+  type  = "String"
+  value = element(split(":", aws_db_instance.main.endpoint), 0)
 }
 
 resource "aws_ssm_parameter" "rds_instance_port" {

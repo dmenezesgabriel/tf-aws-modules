@@ -12,9 +12,6 @@ variable "project_name" {
   type    = string
   default = "todo-microsservices"
 }
-variable "image_tag" {
-  type = string
-}
 
 variable "ec2_instance_type" {
   type    = string
@@ -25,6 +22,7 @@ variable "applications" {
   type = map(object({
     name                    = string
     aws_ecr_repository_name = string
+    image_tag               = string
     port                    = number
     path                    = string
     health_path             = string
@@ -34,6 +32,7 @@ variable "applications" {
     auth = {
       name                    = "auth"
       aws_ecr_repository_name = "ecs-todo-auth"
+      image_tag               = "latest"
       port                    = 80
       path                    = "/auth/"
       health_path             = "/auth/"
@@ -42,11 +41,10 @@ variable "applications" {
     command = {
       name                    = "command"
       aws_ecr_repository_name = "ecs-todo-command"
+      image_tag               = "latest"
       port                    = 80
       path                    = "/command/"
       health_path             = "/command/"
-
     }
   }
 }
-

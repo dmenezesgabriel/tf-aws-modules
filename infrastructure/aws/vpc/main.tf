@@ -59,7 +59,18 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = [aws_route_table.public.id]
 
   tags = {
-    Name = "s3-endpoint"
+    Name = "${var.project_name}/s3-endpoint"
+  }
+}
+
+# Create the RDS VPC Endpoint
+resource "aws_vpc_endpoint" "rds" {
+  vpc_id            = aws_vpc.main.id
+  vpc_endpoint_type = "Interface"
+  service_name      = "com.amazonaws.us-east-1.rds"
+
+  tags = {
+    Name = "${var.project_name}/rds-endpoint"
   }
 }
 

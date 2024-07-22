@@ -98,8 +98,14 @@ terraform-validate-%:
 
 terraform-apply-%:
 	@echo "Applying Terraform $*"
-	terraform -chdir=infrastructure/aws/$* apply --auto-approve
+	@set -e; \
+	for i in $$(seq 1 $(RETRIES)); do \
+		terraform -chdir=infrastructure/aws/$* apply --auto-approve && \
+		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
+	done
 
 terraform-destroy-%:
 	@echo "Destroying Terraform $*"
 	terraform -chdir=infrastructure/aws d/$*estroy --auto-approve
+
+terraform-destroy-all: terraform-destroy-bastion terraform-destroy-job terraform-destroy-ecs terraform-destroy-cognito terraform-destroy-rds terraform-destroy-vpc
