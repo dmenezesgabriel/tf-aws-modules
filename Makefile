@@ -106,6 +106,10 @@ tf-apply-%:
 
 tf-destroy-%:
 	@echo "Destroying Terraform $*"
-	terraform -chdir=infrastructure/aws/$* destroy --auto-approve
+	@set -e; \
+	for i in $$(seq 1 $(RETRIES)); do \
+		terraform -chdir=infrastructure/aws/$* destroy --auto-approve && \
+		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
+	done
 
 tf-destroy-all: tf-destroy-bastion tf-destroy-job tf-destroy-ecs tf-destroy-cognito tf-destroy-rds tf-destroy-vpc
