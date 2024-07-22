@@ -50,17 +50,3 @@ variable "applications" {
   }
 }
 
-variable "db_instance_db_name" {
-  type    = string
-  default = "postgres"
-}
-
-variable "db_instance_username" {
-  type    = string
-  default = "postgres"
-}
-
-variable "db_instance_password" {
-  type    = string
-  default = "postgres"
-}

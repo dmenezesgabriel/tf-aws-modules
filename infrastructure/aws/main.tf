@@ -422,8 +422,24 @@ resource "aws_ecs_task_definition" "apps" {
         valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
       },
       {
-        name      = "RDS_ENDPOINT"
+        name      = "DATABASE_HOST"
         valueFrom = aws_ssm_parameter.rds_endpoint.arn
+      },
+      {
+        name      = "DATABASE_PORT"
+        valueFrom = aws_ssm_parameter.rds_instance_port.arn
+      },
+      {
+        name      = "DATABASE_DB_NAME"
+        valueFrom = aws_ssm_parameter.rds_instance_db_name.arn
+      },
+      {
+        name      = "DATABASE_USER"
+        valueFrom = aws_ssm_parameter.rds_instance_user.arn
+      },
+      {
+        name      = "DATABASE_PASSWORD"
+        valueFrom = aws_ssm_parameter.rds_instance_password.arn
       },
     ]
 
