@@ -30,5 +30,5 @@ variable "rds_instance_password" {
 
 variable "rds_instance_port" {
   type    = string
-  default = "5234"
+  default = "5432"
 }

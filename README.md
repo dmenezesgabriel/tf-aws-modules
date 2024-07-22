@@ -11,3 +11,4 @@
 - [verifying-a-json-web-token-from-cognito-in-python-and-fastapi](https://www.angelospanag.me/blog/verifying-a-json-web-token-from-cognito-in-python-and-fastapi)
 - [low-cost-vpc-amazon-ecs-cluster](https://containersonaws.com/pattern/low-cost-vpc-amazon-ecs-cluster)
 - [accessing-amazon-ecs-fargate-containers-using-aws-systems-manager-session-manager](https://dev.to/rumeshsil/interactively-accessing-amazon-ecs-fargate-containers-using-aws-systems-manager-session-manager-and-ecs-exec-34bm)
+- [creating-aws-ecs-cluster-of-ec2-instances-with-terraform](https://medium.com/@paweldudzinski/creating-aws-ecs-cluster-of-ec2-instances-with-terraform-893c15d1116)

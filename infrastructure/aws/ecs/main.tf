@@ -41,6 +41,14 @@ data "aws_subnets" "public" {
   }
 }
 
+data "aws_security_group" "ecs_task" {
+  name = "${var.project_name}-ecs-task-sg"
+}
+
+data "aws_security_group" "ecs_node_sg" {
+  name = "${var.project_name}-ecs-node-sg"
+}
+
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
@@ -77,33 +85,6 @@ resource "aws_iam_instance_profile" "ecs_node" {
   role        = aws_iam_role.ecs_node_role.name
 }
 
-# --- ECS Node SG ---
-# Security Group for ECS Node which allow outgoing traffic (its required to
-# pull image to start service later)
-
-resource "aws_security_group" "ecs_node_sg" {
-  name_prefix = "${var.project_name}-ecs-node-sg-"
-  vpc_id      = data.aws_vpc.main.id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 65535
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-}
 
 # --- ECS Launch Template ---
 
@@ -115,7 +96,7 @@ resource "aws_launch_template" "ecs_ec2" {
   name_prefix            = "${var.project_name}-ecs-ec2-"
   image_id               = data.aws_ssm_parameter.ecs_node_ami.value
   instance_type          = var.ec2_instance_type
-  vpc_security_group_ids = [aws_security_group.ecs_node_sg.id]
+  vpc_security_group_ids = [data.aws_security_group.ecs_node_sg.id]
 
   iam_instance_profile { arn = aws_iam_instance_profile.ecs_node.arn }
   monitoring { enabled = true }
@@ -417,39 +398,15 @@ resource "aws_ecs_task_definition" "apps" {
   }])
 }
 
-# --- ECS Service ---
-
-resource "aws_security_group" "ecs_task" {
-  name_prefix = "${var.project_name}-ecs-task-sg-"
-  description = "Allow all traffic within the VPC"
-  vpc_id      = data.aws_vpc.main.id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-}
 
 # --- ECS Service ---
 resource "aws_ecs_service" "apps" {
-  for_each        = var.applications
-  name            = each.value.name
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.apps[each.key].arn
-  desired_count   = 2
+  for_each               = var.applications
+  name                   = each.value.name
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.apps[each.key].arn
+  desired_count          = 2
+  enable_execute_command = true
 
   depends_on = [aws_lb_target_group.apps, aws_lb_listener_rule.apps]
 
@@ -460,7 +417,7 @@ resource "aws_ecs_service" "apps" {
   }
 
   network_configuration {
-    security_groups = [aws_security_group.ecs_task.id]
+    security_groups = [data.aws_security_group.ecs_task.id]
     subnets         = data.aws_subnets.private.ids[*]
   }
 
@@ -490,20 +447,18 @@ resource "aws_security_group" "http" {
   dynamic "ingress" {
     for_each = [80, 443]
     content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
+      protocol    = "tcp"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
 
   egress {
-    protocol         = "-1"
-    from_port        = 0
-    to_port          = 0
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -527,7 +482,7 @@ resource "aws_lb_target_group" "apps" {
     path                = each.value.health_path
     port                = each.value.port
     matcher             = 200
-    interval            = 10
+    interval            = 300
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 3

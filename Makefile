@@ -51,7 +51,7 @@ push: login build tag
 fetch-parameters:
 	@echo "Fetching SSM parameters..."
 	$(eval BASTION_IP := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/ec2/bastion/ec2-bastion-public-ip" --query "Parameter.Value" --output text))
-	$(eval RDS_ENDPOINT := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/rds/postgres/endpoint_url" --query "Parameter.Value" --output text))
+	$(eval RDS_ENDPOINT := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/rds/postgres/rds_instance_endpoint_url" --query "Parameter.Value" --output text))
 	@echo "Parameters fetched."
 
 store-bastion-key:
@@ -89,19 +89,9 @@ tf-validate-%:
 	terraform -chdir=infrastructure/aws/$* validate
 
 tf-apply-%:
-	@echo "Applying Terraform $*"
-	@set -e; \
-	for i in $$(seq 1 $(RETRIES)); do \
-		terraform -chdir=infrastructure/aws/$* apply --auto-approve && \
-		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
-	done
+	terraform -chdir=infrastructure/aws/$* apply --auto-approve
 
 tf-destroy-%:
-	@echo "Destroying Terraform $*"
-	@set -e; \
-	for i in $$(seq 1 $(RETRIES)); do \
-		terraform -chdir=infrastructure/aws/$* destroy --auto-approve && \
-		break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
-	done
+	terraform -chdir=infrastructure/aws/$* destroy --auto-approve
 
 tf-destroy-all: tf-destroy-bastion tf-destroy-job tf-destroy-ecs tf-destroy-cognito tf-destroy-rds tf-destroy-vpc
