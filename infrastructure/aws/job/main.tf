@@ -117,6 +117,14 @@ resource "aws_iam_policy" "main" {
       {
         Effect = "Allow"
         Action = [
+          "ecs:ListClusters",
+          "ecs:DeleteCluster"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
