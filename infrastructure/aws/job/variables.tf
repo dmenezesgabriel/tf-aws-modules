@@ -12,3 +12,11 @@ variable "project_name" {
   type    = string
   default = "todo-microsservices"
 }
+
+variable "image_tag" {
+  type = string
+}
+
+variable "ecs_repository_name" {
+  type = string
+}

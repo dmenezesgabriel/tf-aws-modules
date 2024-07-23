@@ -98,3 +98,9 @@ tf-destroy-%:
 	terraform -chdir=infrastructure/aws/$* destroy --auto-approve
 
 tf-destroy-all: tf-destroy-bastion tf-destroy-job tf-destroy-ecs tf-destroy-cognito tf-destroy-rds tf-destroy-vpc
+
+apply-job:
+	aws batch submit-job \
+	--job-name alembic-migration-job \
+	--job-queue todo-microsservices-batch-job-queue \
+	--job-definition todo-microsservices-batch-job-definition

@@ -61,19 +61,11 @@ data "aws_ssm_parameter" "rds_instance_password" {
 }
 
 data "aws_ecr_repository" "main" {
-  name = "ecs-todo-command"
+  name = var.ecs_repository_name
 }
 
-resource "aws_security_group" "batch" {
-  name   = "${var.project_name}-batch-security-group"
-  vpc_id = data.aws_vpc.main.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+data "aws_security_group" "ecs_node_sg" {
+  name = "${var.project_name}-ecs-node-sg"
 }
 
 resource "aws_iam_role" "batch_service" {
@@ -148,25 +140,54 @@ resource "aws_batch_compute_environment" "main" {
 
   compute_resources {
     type               = "FARGATE"
-    min_vcpus          = 0
     max_vcpus          = 2
-    desired_vcpus      = 1
     subnets            = data.aws_subnets.private.ids[*]
-    security_group_ids = [aws_security_group.batch.id]
+    security_group_ids = [data.aws_security_group.ecs_node_sg.id]
   }
 }
 
+resource "aws_iam_role" "batch_execution" {
+  name = "${var.project_name}-batch-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "batch_execution_policy" {
+  role       = aws_iam_role.batch_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
 
 resource "aws_batch_job_definition" "main" {
   name = "${var.project_name}-batch-job-definition"
   type = "container"
 
+  platform_capabilities = ["FARGATE"]
+
   container_properties = jsonencode({
     platform_version = "LATEST"
-    image            = "${data.aws_ecr_repository.main.repository_url}:20240721220624"
-    vcpus            = 2
-    memory           = 4096
-    command          = ["bash", "-c", "'alembic -c migrations/alembic/alembic.ini upgrade head'"]
+    image            = "${data.aws_ecr_repository.main.repository_url}:${var.image_tag}"
+    resourceRequirements = [
+      {
+        type  = "VCPU"
+        value = "2"
+      },
+      {
+        type  = "MEMORY"
+        value = "4096"
+      }
+    ]
+    command = ["alembic", "-c", "migrations/alembic/alembic.ini", "upgrade", "head"]
     environment = [
       {
         name  = "DATABASE_HOST"
@@ -202,6 +223,7 @@ resource "aws_batch_job_definition" "main" {
         "awslogs-stream-prefix" = "batch"
       }
     }
+    executionRoleArn = aws_iam_role.batch_execution.arn
   })
 }
 
