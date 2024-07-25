@@ -52,53 +52,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.${var.aws_region_name}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids   = [aws_route_table.private.id]
-
-  tags = {
-    Name = "${var.project_name}/s3-endpoint"
-  }
-}
-
-# --- VPC Endpoints ---
-
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id            = aws_vpc.main.id
-  vpc_endpoint_type = "Interface"
-  service_name      = "com.amazonaws.${var.aws_region_name}.ecr.api"
-  subnet_ids        = aws_subnet.private[*].id
-
-  tags = {
-    Name = "${var.project_name}/ecr-api-endpoint"
-  }
-}
-
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id            = aws_vpc.main.id
-  vpc_endpoint_type = "Interface"
-  service_name      = "com.amazonaws.${var.aws_region_name}.ecr.dkr"
-  subnet_ids        = aws_subnet.private[*].id
-
-  tags = {
-    Name = "${var.project_name}/ecr-dkr-endpoint"
-  }
-}
-
-resource "aws_vpc_endpoint" "cloudwatch" {
-  vpc_id            = aws_vpc.main.id
-  vpc_endpoint_type = "Interface"
-  service_name      = "com.amazonaws.${var.aws_region_name}.logs"
-  subnet_ids        = aws_subnet.private[*].id
-
-  tags = {
-    Name = "${var.project_name}/cloudwatch-endpoint"
-  }
-}
-
-
 # --- Nat Gateway ---
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
@@ -296,4 +249,87 @@ resource "aws_security_group" "bastion_host" {
   tags = {
     Name = "${var.project_name}-bastion-host-security-group"
   }
+}
+
+# --- VPC Endpoints ---
+data "aws_iam_policy_document" "s3_ecr_access" {
+  version = "2012-10-17"
+  statement {
+    sid     = "s3access"
+    effect  = "Allow"
+    actions = ["*"]
+
+    principals {
+      type        = "*"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region_name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+  policy            = data.aws_iam_policy_document.s3_ecr_access.json
+
+  tags = {
+    Name = "${var.project_name}/s3-endpoint"
+  }
+}
+
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.main.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.aws_region_name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.ecs_task.id]
+  tags = {
+    Name = "${var.project_name}/ecr-api-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.main.id
+  private_dns_enabled = true
+  service_name        = "com.amazonaws.${var.aws_region_name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.ecs_task.id]
+
+  tags = {
+    Name = "${var.project_name}/ecr-dkr-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "cloudwatch" {
+  vpc_id            = aws_vpc.main.id
+  vpc_endpoint_type = "Interface"
+  service_name      = "com.amazonaws.${var.aws_region_name}.logs"
+  subnet_ids        = aws_subnet.private[*].id
+
+  tags = {
+    Name = "${var.project_name}/cloudwatch-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecs-agent" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region_name}.ecs-agent"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  security_group_ids  = [aws_security_group.ecs_task.id]
+  subnet_ids          = aws_subnet.private[*].id
+
+
+}
+resource "aws_vpc_endpoint" "ecs-telemetry" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region_name}.ecs-telemetry"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  security_group_ids  = [aws_security_group.ecs_task.id]
+  subnet_ids          = aws_subnet.private[*].id
 }
