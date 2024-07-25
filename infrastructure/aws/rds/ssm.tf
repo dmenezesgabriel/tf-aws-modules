@@ -1,4 +1,4 @@
-resource "aws_ssm_parameter" "rds_ionstance_endpoint" {
+resource "aws_ssm_parameter" "rds_instance_endpoint" {
   name  = "/${var.project_name}/rds/postgres/rds_instance_endpoint_url"
   type  = "String"
   value = aws_db_instance.main.endpoint

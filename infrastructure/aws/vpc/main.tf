@@ -184,6 +184,31 @@ resource "aws_security_group" "rds_sg" {
   }
 }
 
+
+resource "aws_security_group" "document_db_sg" {
+  name        = "${var.project_name}-document-db-sg"
+  description = "Allow traffic to document db"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [
+      aws_security_group.ecs_node_sg.id,
+      aws_security_group.bastion_host.id
+    ]
+  }
+}
+
 # --- ECS Node SG ---
 # Security Group for ECS Node which allow outgoing traffic (its required to
 # pull image to start service later)
@@ -250,6 +275,14 @@ resource "aws_security_group" "bastion_host" {
     description = "SSH from VPC"
     from_port   = 5432
     to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 27017
+    to_port     = 27017
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

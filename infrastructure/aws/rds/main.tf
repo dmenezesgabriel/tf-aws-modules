@@ -32,7 +32,6 @@ data "aws_security_group" "rds_sg" {
   name = "${var.project_name}-rds-sg"
 }
 
-# RDS instance resource
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   engine                 = "postgres"
@@ -45,7 +44,6 @@ resource "aws_db_instance" "main" {
   skip_final_snapshot    = true
   vpc_security_group_ids = [data.aws_security_group.rds_sg.id]
 
-  # Define the subnet group
   db_subnet_group_name = aws_db_subnet_group.main.name
 
   tags = {
@@ -53,12 +51,11 @@ resource "aws_db_instance" "main" {
   }
 }
 
-# Subnet group for RDS
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-subnet-group"
   subnet_ids = data.aws_subnets.private.ids[*]
 
   tags = {
-    Name = "${var.project_name}-subnet-group"
+    Name = "${var.project_name}-rds-subnet-group"
   }
 }

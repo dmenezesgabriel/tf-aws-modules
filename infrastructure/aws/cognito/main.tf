@@ -25,10 +25,6 @@ resource "aws_cognito_user_pool" "main" {
     allow_admin_create_user_only = false
   }
 
-  user_pool_add_ons {
-    advanced_security_mode = "ENFORCED"
-  }
-
   account_recovery_setting {
     recovery_mechanism {
       name     = "verified_email"

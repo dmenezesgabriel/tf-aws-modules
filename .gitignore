@@ -202,3 +202,4 @@ cython_debug/
 
 localstack_volume/
 postgres_data/
+*.pem

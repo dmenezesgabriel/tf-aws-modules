@@ -52,6 +52,7 @@ fetch-parameters:
 	@echo "Fetching SSM parameters..."
 	$(eval BASTION_IP := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/ec2/bastion/ec2-bastion-public-ip" --query "Parameter.Value" --output text))
 	$(eval RDS_ENDPOINT := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/rds/postgres/rds_instance_endpoint_url" --query "Parameter.Value" --output text))
+	$(eval DOCUMENT_DB_ENDPOINT := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/documentdb/documentdb_endpoint" --query "Parameter.Value" --output text))
 	@echo "Parameters fetched."
 
 store-bastion-key:
@@ -60,9 +61,14 @@ store-bastion-key:
 	@chmod 600 $(BASTION_KEY_FILE)
 	@echo "Bastion key stored."
 
-execute-ssh:
+execute-rds-forward:
 	@echo "Executing SSH command..."
 	ssh -i $(BASTION_KEY_FILE) -f -N -L 5432:$(RDS_ENDPOINT) -p 22 ec2-user@$(BASTION_IP) -v
+	@echo "SSH command executed."
+
+execute-mongo-forward:
+	@echo "Executing SSH command..."
+	ssh -i $(BASTION_KEY_FILE) -f -N -L 27017:$(DOCUMENT_DB_ENDPOINT):27017 -p 22 ec2-user@$(BASTION_IP) -v
 	@echo "SSH command executed."
 
 cleanup-bastion-key:
@@ -70,10 +76,15 @@ cleanup-bastion-key:
 	@rm -f $(BASTION_KEY_FILE)
 	@echo "Temporary files cleaned."
 
-rds-portforward: fetch-parameters store-bastion-key execute-ssh
+rds-portforward: fetch-parameters store-bastion-key execute-rds-forward
 
-stop-portforward:
+mongo-portforward: fetch-parameters store-bastion-key execute-mongo-forward
+
+stop-rds-portforward:
 	lsof -ti:5432 | xargs kill -9
+
+stop-mongo-portforward:
+	lsof -ti:27017 | xargs kill -9
 
 create-command-migration:
 	@read -p "Enter migration message: " MESSAGE; \
