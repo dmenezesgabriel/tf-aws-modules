@@ -76,6 +76,9 @@ cleanup-bastion-key:
 	@rm -f $(BASTION_KEY_FILE)
 	@echo "Temporary files cleaned."
 
+ssh-bastion: fetch-parameters store-bastion-key
+	ssh -i $(BASTION_KEY_FILE) -p 22 ec2-user@$(BASTION_IP)
+
 rds-portforward: fetch-parameters store-bastion-key execute-rds-forward
 
 mongo-portforward: fetch-parameters store-bastion-key execute-mongo-forward

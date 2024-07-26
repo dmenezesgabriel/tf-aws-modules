@@ -13,7 +13,7 @@ resource "aws_ssm_parameter" "documentdb_password" {
 resource "aws_ssm_parameter" "documentdb_endpoint" {
   name  = "/${var.project_name}/documentdb/documentdb_endpoint"
   type  = "String"
-  value = aws_docdb_cluster.docdb.endpoint
+  value = aws_docdb_cluster.main.endpoint
 }
 
 resource "aws_ssm_parameter" "documentdb_port" {
