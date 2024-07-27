@@ -1,5 +1,15 @@
 # Terraform aws ecs cluster
 
+## DocumentDB connection
+
+```sh
+mongodb://username:password@endpoint:27017
+```
+
+```sh
+mongosh --host endpoint:27017 --username username --password password
+```
+
 ## Resources
 
 - [aws-ecs-cluster-on-ec2-with-terraform-2023](https://medium.com/@vladkens/aws-ecs-cluster-on-ec2-with-terraform-2023-fdb9f6b7db07)
@@ -12,3 +22,4 @@
 - [low-cost-vpc-amazon-ecs-cluster](https://containersonaws.com/pattern/low-cost-vpc-amazon-ecs-cluster)
 - [accessing-amazon-ecs-fargate-containers-using-aws-systems-manager-session-manager](https://dev.to/rumeshsil/interactively-accessing-amazon-ecs-fargate-containers-using-aws-systems-manager-session-manager-and-ecs-exec-34bm)
 - [creating-aws-ecs-cluster-of-ec2-instances-with-terraform](https://medium.com/@paweldudzinski/creating-aws-ecs-cluster-of-ec2-instances-with-terraform-893c15d1116)
+- [documentdb-terraform](https://radzion.com/blog/documentdb-terraform)
