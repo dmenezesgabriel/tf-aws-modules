@@ -1,4 +1,17 @@
-# --- AWS Cognito ---
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws",
+      version = "5.17.0"
+    }
+  }
+}
+
+provider "aws" {
+  profile = var.aws_profile
+  region  = var.aws_region_name
+}
+
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-user-pool"
 
@@ -23,10 +36,6 @@ resource "aws_cognito_user_pool" "main" {
 
   admin_create_user_config {
     allow_admin_create_user_only = false
-  }
-
-  user_pool_add_ons {
-    advanced_security_mode = "ENFORCED"
   }
 
   account_recovery_setting {
@@ -81,11 +90,4 @@ resource "aws_cognito_user_pool_client" "main" {
 
   prevent_user_existence_errors = "ENABLED"
   enable_token_revocation       = true
-}
-
-output "cognito_app_client_id" {
-  value = aws_cognito_user_pool_client.main.id
-}
-output "cognito_user_pool_id" {
-  value = aws_cognito_user_pool.main.id
 }

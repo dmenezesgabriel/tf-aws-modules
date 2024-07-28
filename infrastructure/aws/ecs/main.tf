@@ -1,6 +1,9 @@
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws", version = "5.17.0" }
+    aws = {
+      source  = "hashicorp/aws",
+      version = "5.17.0"
+    }
   }
 }
 
@@ -9,115 +12,43 @@ provider "aws" {
   region  = var.aws_region_name
 }
 
-# --- VPC ---
 
-data "aws_availability_zones" "available" { state = "available" }
-
-locals {
-  azs_count = 2
-  azs_names = data.aws_availability_zones.available.names
+data "aws_vpc" "main" {
+  tags = { Name = "${var.project_name}-vpc" }
 }
 
-resource "aws_vpc" "main" {
-  cidr_block           = "10.10.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-  tags                 = { Name = "${var.project_name}-vpc" }
-}
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.main.id]
+  }
 
-resource "aws_subnet" "public" {
-  count                   = local.azs_count
-  vpc_id                  = aws_vpc.main.id
-  availability_zone       = local.azs_names[count.index]
-  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, 10 + count.index)
-  map_public_ip_on_launch = true
-  tags                    = { Name = "${var.project_name}-public-${local.azs_names[count.index]}" }
-}
-
-resource "aws_subnet" "private" {
-  count             = local.azs_count
-  vpc_id            = aws_vpc.main.id
-  availability_zone = local.azs_names[count.index]
-  cidr_block        = cidrsubnet(aws_vpc.main.cidr_block, 8, 100 + count.index)
-  tags = {
-    Name = "${var.project_name}-private-${local.azs_names[count.index]}"
+  filter {
+    name   = "tag:Type"
+    values = ["private"]
   }
 }
 
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.us-east-1.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids   = [aws_route_table.public.id]
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.main.id]
+  }
 
-  tags = {
-    Name = "s3-endpoint"
+  filter {
+    name   = "tag:Type"
+    values = ["public"]
   }
 }
 
-# --- Nat Gateway ---
-resource "aws_nat_gateway" "main" {
-  count         = local.azs_count
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
-  tags = {
-    Name = "${var.project_name}-nat-${count.index}"
-  }
+data "aws_security_group" "ecs_task" {
+  name = "${var.project_name}-ecs-task-sg"
 }
 
-
-resource "aws_eip" "nat" {
-  count      = local.azs_count
-  depends_on = [aws_internet_gateway.main]
-  tags       = { Name = "${var.project_name}-eip-${local.azs_names[count.index]}" }
-}
-# --- Internet Gateway ---
-
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.project_name}-igw" }
+data "aws_security_group" "ecs_node_sg" {
+  name = "${var.project_name}-ecs-node-sg"
 }
 
-
-
-# --- Public Route Table ---
-# Load Balancer requires at least two subnets created in different
-# Availability Zones (AZ).
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.project_name}-rt-public" }
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-}
-
-resource "aws_route_table_association" "public" {
-  count          = local.azs_count
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-
-# --- Private Route Table ---
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.main.id
-  tags = {
-    Name = "${var.project_name}-rt-private"
-  }
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[0].id
-  }
-}
-
-resource "aws_route_table_association" "private" {
-  count          = local.azs_count
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
-}
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
@@ -154,33 +85,6 @@ resource "aws_iam_instance_profile" "ecs_node" {
   role        = aws_iam_role.ecs_node_role.name
 }
 
-# --- ECS Node SG ---
-# Security Group for ECS Node which allow outgoing traffic (its required to
-# pull image to start service later)
-
-resource "aws_security_group" "ecs_node_sg" {
-  name_prefix = "${var.project_name}-ecs-node-sg-"
-  vpc_id      = aws_vpc.main.id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 65535
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-}
 
 # --- ECS Launch Template ---
 
@@ -192,7 +96,7 @@ resource "aws_launch_template" "ecs_ec2" {
   name_prefix            = "${var.project_name}-ecs-ec2-"
   image_id               = data.aws_ssm_parameter.ecs_node_ami.value
   instance_type          = var.ec2_instance_type
-  vpc_security_group_ids = [aws_security_group.ecs_node_sg.id]
+  vpc_security_group_ids = [data.aws_security_group.ecs_node_sg.id]
 
   iam_instance_profile { arn = aws_iam_instance_profile.ecs_node.arn }
   monitoring { enabled = true }
@@ -208,9 +112,9 @@ resource "aws_launch_template" "ecs_ec2" {
 
 resource "aws_autoscaling_group" "ecs" {
   name_prefix               = "${var.project_name}-ecs-asg-"
-  vpc_zone_identifier       = aws_subnet.private[*].id
+  vpc_zone_identifier       = data.aws_subnets.private.ids[*]
   min_size                  = 2
-  max_size                  = 8
+  max_size                  = 4
   health_check_grace_period = 0
   health_check_type         = "EC2"
   protect_from_scale_in     = false
@@ -299,6 +203,27 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
 
   statement {
     actions = [
+      "docdb:Connect",
+      "docdb:DescribeDBInstances",
+      "docdb:ListTagsForResource",
+      "docdb:ModifyDBClusterParameterGroup",
+      "docdb:ModifyDBClusterSnapshotAttribute",
+      "docdb:ModifyDBInstance",
+      "docdb:DescribeDBClusters",
+      "docdb:CreateDBCluster",
+      "docdb:DeleteDBCluster",
+      "docdb:ListTagsForResource",
+      "docdb:CreateDBClusterSnapshot",
+      "docdb:ModifyDBCluster",
+      "docdb:RebootDBInstance",
+      "docdb:RestoreDBClusterToPointInTime"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
       "s3:GetObject",
       "s3:ListBucket",
       "s3:ListAllMyBuckets"
@@ -320,7 +245,26 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
       "cognito-idp:GlobalSignOut"
     ]
     effect    = "Allow"
-    resources = [aws_cognito_user_pool.main.arn]
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "ecs:ExecuteCommand"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
   }
 }
 
@@ -369,7 +313,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy" {
 
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
-  retention_in_days = 14
+  retention_in_days = 7
 }
 
 # --- ECR Repository ---
@@ -383,6 +327,37 @@ output "aws_ecr_repository_apps" {
 }
 
 # --- ECS Task Definition ---
+data "aws_ssm_parameter" "rds_instance_host" {
+  name = "/${var.project_name}/rds/postgres/rds_instance_host"
+}
+
+data "aws_ssm_parameter" "rds_instance_port" {
+  name = "/${var.project_name}/rds/postgres/rds_instance_port"
+}
+
+data "aws_ssm_parameter" "rds_instance_db_name" {
+  name = "/${var.project_name}/rds/postgres/rds_instance_db_name"
+}
+
+data "aws_ssm_parameter" "rds_instance_user" {
+  name = "/${var.project_name}/rds/postgres/rds_instance_user"
+}
+
+data "aws_ssm_parameter" "rds_instance_password" {
+  name = "/${var.project_name}/rds/postgres/rds_instance_password"
+}
+
+data "aws_ssm_parameter" "cognito_app_client_id" {
+  name = "/${var.project_name}/cognito/cognito_app_client_id"
+}
+
+data "aws_ssm_parameter" "cognito_app_pool_id" {
+  name = "/${var.project_name}/cognito/cognito_app_pool_id"
+}
+
+data "aws_ecr_repository" "main" {
+  name = "ecs-todo-command"
+}
 
 resource "aws_ecs_task_definition" "apps" {
   for_each           = var.applications
@@ -395,26 +370,42 @@ resource "aws_ecs_task_definition" "apps" {
 
   container_definitions = jsonencode([{
     name         = each.value.name,
-    image        = "${data.aws_ecr_repository.apps[each.key].repository_url}:${var.image_tag}",
+    image        = "${data.aws_ecr_repository.apps[each.key].repository_url}:${each.value.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = each.value.port, hostPort = each.value.port }],
     secrets = [
       {
-        name      = "AWS_REGION_NAME"
-        valueFrom = aws_ssm_parameter.aws_region_name.arn
-      },
-      {
         name      = "AWS_COGNITO_APP_CLIENT_ID"
-        valueFrom = aws_ssm_parameter.cognito_app_client_id.arn
+        valueFrom = data.aws_ssm_parameter.cognito_app_client_id.arn
       },
       {
         name      = "AWS_COGNITO_USER_POOL_ID"
-        valueFrom = aws_ssm_parameter.cognito_user_pool_id.arn
+        valueFrom = data.aws_ssm_parameter.cognito_app_pool_id.arn
+      },
+      {
+        name      = "DATABASE_HOST"
+        valueFrom = data.aws_ssm_parameter.rds_instance_host.arn
+      },
+      {
+        name      = "DATABASE_PORT"
+        valueFrom = data.aws_ssm_parameter.rds_instance_port.arn
+      },
+      {
+        name      = "DATABASE_DB_NAME"
+        valueFrom = data.aws_ssm_parameter.rds_instance_db_name.arn
+      },
+      {
+        name      = "DATABASE_USER"
+        valueFrom = data.aws_ssm_parameter.rds_instance_user.arn
+      },
+      {
+        name      = "DATABASE_PASSWORD"
+        valueFrom = data.aws_ssm_parameter.rds_instance_password.arn
       },
     ]
 
     environment = [
-      { name = "EXAMPLE", value = "example" }
+      { name = "AWS_REGION_NAME", value = var.aws_region_name }
     ]
 
     logConfiguration = {
@@ -428,39 +419,15 @@ resource "aws_ecs_task_definition" "apps" {
   }])
 }
 
-# --- ECS Service ---
-
-resource "aws_security_group" "ecs_task" {
-  name_prefix = "${var.project_name}-ecs-task-sg-"
-  description = "Allow all traffic within the VPC"
-  vpc_id      = aws_vpc.main.id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-}
 
 # --- ECS Service ---
 resource "aws_ecs_service" "apps" {
-  for_each        = var.applications
-  name            = each.value.name
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.apps[each.key].arn
-  desired_count   = 2
+  for_each               = var.applications
+  name                   = each.value.name
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.apps[each.key].arn
+  desired_count          = 2
+  enable_execute_command = true
 
   depends_on = [aws_lb_target_group.apps, aws_lb_listener_rule.apps]
 
@@ -471,8 +438,8 @@ resource "aws_ecs_service" "apps" {
   }
 
   network_configuration {
-    security_groups = [aws_security_group.ecs_task.id]
-    subnets         = aws_subnet.private[*].id
+    security_groups = [data.aws_security_group.ecs_task.id]
+    subnets         = data.aws_subnets.private.ids[*]
   }
 
   capacity_provider_strategy {
@@ -496,39 +463,37 @@ resource "aws_ecs_service" "apps" {
 resource "aws_security_group" "http" {
   name_prefix = "${var.project_name}-http-sg-"
   description = "Allow all HTTP/HTTPS traffic from public"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = data.aws_vpc.main.id
 
   dynamic "ingress" {
     for_each = [80, 443]
     content {
-      protocol         = "tcp"
-      from_port        = ingress.value
-      to_port          = ingress.value
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
+      protocol    = "tcp"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
 
   egress {
-    protocol         = "-1"
-    from_port        = 0
-    to_port          = 0
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
 resource "aws_lb" "main" {
   name               = "${var.project_name}-alb"
   load_balancer_type = "application"
-  subnets            = aws_subnet.public[*].id
+  subnets            = data.aws_subnets.public.ids[*]
   security_groups    = [aws_security_group.http.id]
 }
 
 resource "aws_lb_target_group" "apps" {
   for_each    = var.applications
   name        = each.value.name
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = data.aws_vpc.main.id
   protocol    = "HTTP"
   port        = each.value.port
   target_type = "ip"
@@ -538,7 +503,7 @@ resource "aws_lb_target_group" "apps" {
     path                = each.value.health_path
     port                = each.value.port
     matcher             = 200
-    interval            = 10
+    interval            = 300
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 3
