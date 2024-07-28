@@ -125,6 +125,7 @@ resource "aws_iam_policy" "main" {
       {
         Effect = "Allow"
         Action = [
+          "logs:DescribeLogStreams",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]

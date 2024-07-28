@@ -1,4 +1,17 @@
-# --- AWS Cognito ---
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws",
+      version = "5.17.0"
+    }
+  }
+}
+
+provider "aws" {
+  profile = var.aws_profile
+  region  = var.aws_region_name
+}
+
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-user-pool"
 

@@ -203,6 +203,27 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
 
   statement {
     actions = [
+      "docdb:Connect",
+      "docdb:DescribeDBInstances",
+      "docdb:ListTagsForResource",
+      "docdb:ModifyDBClusterParameterGroup",
+      "docdb:ModifyDBClusterSnapshotAttribute",
+      "docdb:ModifyDBInstance",
+      "docdb:DescribeDBClusters",
+      "docdb:CreateDBCluster",
+      "docdb:DeleteDBCluster",
+      "docdb:ListTagsForResource",
+      "docdb:CreateDBClusterSnapshot",
+      "docdb:ModifyDBCluster",
+      "docdb:RebootDBInstance",
+      "docdb:RestoreDBClusterToPointInTime"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
       "s3:GetObject",
       "s3:ListBucket",
       "s3:ListAllMyBuckets"

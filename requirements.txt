@@ -1,0 +1,2 @@
+terraform-local==0.18.2
+

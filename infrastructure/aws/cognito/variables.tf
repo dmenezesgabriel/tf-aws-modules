@@ -10,5 +10,10 @@ variable "aws_profile" {
 
 variable "project_name" {
   type    = string
-  default = "todo-microsservices"
+  default = "todo-microservices"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
 }

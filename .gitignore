@@ -202,4 +202,8 @@ cython_debug/
 
 localstack_volume/
 postgres_data/
+mongo_data/
 *.pem
+.env.auth
+.env.command
+.env.query
