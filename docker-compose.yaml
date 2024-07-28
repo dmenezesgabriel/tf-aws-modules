@@ -6,7 +6,7 @@ services:
     volumes:
       - ./services/auth:/app/
     depends_on:
-      - localstack
+      - motoserver
     env_file:
       - ./services/auth/.env
     networks:
