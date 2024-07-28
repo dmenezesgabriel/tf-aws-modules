@@ -13,17 +13,7 @@ variable "project_name" {
   default = "todo-microservices"
 }
 
-variable "documentdb_user" {
-  type    = string
-  default = "documentdb"
-}
-
-variable "documentdb_password" {
-  type    = string
-  default = "documentdb"
-}
-
-variable "documentdb_port" {
-  type    = string
-  default = "27017"
+variable "availability_zones_count" {
+  type    = number
+  default = 2
 }

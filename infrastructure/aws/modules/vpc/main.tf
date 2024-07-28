@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws",
-      version = "5.17.0"
+      version = "~> 5.0"
     }
   }
 }
@@ -17,7 +17,7 @@ provider "aws" {
 data "aws_availability_zones" "available" { state = "available" }
 
 locals {
-  azs_count = 2
+  azs_count = var.availability_zones_count
   azs_names = data.aws_availability_zones.available.names
 }
 
@@ -53,6 +53,7 @@ resource "aws_subnet" "private" {
 }
 
 # --- Nat Gateway ---
+
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
@@ -65,6 +66,7 @@ resource "aws_eip" "nat" {
   depends_on = [aws_internet_gateway.main]
   tags       = { Name = "${var.project_name}-eip" }
 }
+
 # --- Internet Gateway ---
 
 resource "aws_internet_gateway" "main" {
@@ -73,8 +75,6 @@ resource "aws_internet_gateway" "main" {
 }
 
 # --- Public Route Table ---
-# Load Balancer requires at least two subnets created in different
-# Availability Zones (AZ).
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -93,6 +93,7 @@ resource "aws_route_table_association" "public" {
 }
 
 # --- Private Route Table ---
+
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags = {

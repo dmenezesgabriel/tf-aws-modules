@@ -2,7 +2,7 @@
 resource "aws_security_group" "rds_sg" {
   name        = "${var.project_name}-rds-sg"
   description = "Allow traffic to RDS"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   egress {
     from_port   = 0
@@ -27,7 +27,7 @@ resource "aws_security_group" "rds_sg" {
 resource "aws_security_group" "document_db_sg" {
   name        = "${var.project_name}-document-db-sg"
   description = "Allow traffic to document db"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   egress {
     from_port   = 0
@@ -54,7 +54,7 @@ resource "aws_security_group" "document_db_sg" {
 
 resource "aws_security_group" "ecs_node_sg" {
   name   = "${var.project_name}-ecs-node-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.vpc.vpc_id
 
   dynamic "ingress" {
     for_each = [80, 443]
@@ -78,7 +78,7 @@ resource "aws_security_group" "ecs_node_sg" {
 resource "aws_security_group" "ecs_task" {
   name        = "${var.project_name}-ecs-task-sg"
   description = "Allow all traffic within the VPC"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   dynamic "ingress" {
     for_each = [80, 443]
@@ -100,7 +100,7 @@ resource "aws_security_group" "ecs_task" {
 resource "aws_security_group" "bastion_host" {
   name        = "${var.project_name}-bastion-host"
   description = "Allow SSH"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description = "SSH from VPC"
