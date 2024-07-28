@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from src.adapter.cognito_authorizer import cognito_jwt_authorizer_access_token
 from src.adapter.dto import (
     TodoCreateRequestDTO,
     TodoResponseDTO,
@@ -15,31 +16,36 @@ logger = logging.getLogger(__name__)
 
 class HTTPApiAdapter:
     def __init__(self, todo_service: TodoService) -> None:
+        self.dependencies = (
+            [Depends(cognito_jwt_authorizer_access_token)]
+            if config.ENVIRONMENT not in ["local", "development"]
+            else None
+        )
         self.__todo_service = todo_service
         self.router = APIRouter()
         self.router.add_api_route(
             "/todo",
             self.create_todo,
             methods=["POST"],
-            dependencies=None,
+            dependencies=self.dependencies,
         )
         self.router.add_api_route(
             "/todo/{id}",
             self.get_todo_by_id,
             methods=["GET"],
-            dependencies=None,
+            dependencies=self.dependencies,
         )
         self.router.add_api_route(
             "/todo/{id}",
             self.update_todo,
             methods=["PUT"],
-            dependencies=None,
+            dependencies=self.dependencies,
         )
         self.router.add_api_route(
             "/todo/{id}",
             self.delete_todo,
             methods=["DELETE"],
-            dependencies=None,
+            dependencies=self.dependencies,
         )
 
     def create_todo(self, todo: TodoCreateRequestDTO) -> TodoResponseDTO:

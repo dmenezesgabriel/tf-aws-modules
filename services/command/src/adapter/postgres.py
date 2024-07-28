@@ -41,11 +41,11 @@ class PostgresTodoAdapter:
     def database_url(self):
         return URL.create(
             "postgresql",
-            username=config.DATABASE_USER,
-            password=config.DATABASE_PASSWORD,
-            host=config.DATABASE_HOST,
-            database=config.DATABASE_DB_NAME,
-            port=config.DATABASE_PORT,
+            username=config.get_parameter("DATABASE_USER"),
+            password=config.get_parameter("DATABASE_PASSWORD"),
+            host=config.get_parameter("DATABASE_HOST"),
+            database=config.get_parameter("DATABASE_DB_NAME"),
+            port=config.get_parameter("DATABASE_PORT"),
         )
 
     @property

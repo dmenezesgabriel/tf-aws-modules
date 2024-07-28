@@ -82,22 +82,6 @@ services:
     networks:
       - app-network
 
-  localstack:
-    image: localstack/localstack:latest
-    ports:
-      - "127.0.0.1:4566:4566"
-      - "127.0.0.1:4510-4559:4510-4559"
-    environment:
-      - SERVICES=${SERVICES-lambda,s3,apigateway,cloudwatch,dynamodb,sqs,kinesis,serverless,secretsmanager,ssm}
-      - DEBUG=${DEBUG-}
-      - LOCALSTACK_PERSISTENCE=1
-    volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./localstack_volume}:/var/lib/localstack"
-      - "./mock/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh" # ready hook
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    networks:
-      - app-network
-
   motoserver:
     image: motoserver/moto:latest
     ports:
@@ -106,6 +90,22 @@ services:
       - MOTO_PORT=5000
     networks:
       - app-network
+
+  # localstack:
+  #   image: localstack/localstack:latest
+  #   ports:
+  #     - "127.0.0.1:4566:4566"
+  #     - "127.0.0.1:4510-4559:4510-4559"
+  #   environment:
+  #     - SERVICES=${SERVICES-lambda,s3,apigateway,cloudwatch,dynamodb,sqs,kinesis,serverless,secretsmanager,ssm}
+  #     - DEBUG=${DEBUG-}
+  #     - LOCALSTACK_PERSISTENCE=1
+  #   volumes:
+  #     - "${LOCALSTACK_VOLUME_DIR:-./localstack_volume}:/var/lib/localstack"
+  #     - "./mock/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh" # ready hook
+  #     - "/var/run/docker.sock:/var/run/docker.sock"
+  #   networks:
+  #     - app-network
 
 networks:
   app-network:

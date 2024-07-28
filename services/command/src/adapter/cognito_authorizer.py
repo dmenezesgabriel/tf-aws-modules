@@ -5,15 +5,14 @@ from typing import Optional
 import jwt
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from src.adapter.aws import AWSClientAdapter
 from src.config import get_config
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 
 config = get_config()
 logger = logging.getLogger(__name__)
 
-jwks_client = jwt.PyJWKClient(
-    f"https://cognito-idp.{config.AWS_REGION_NAME}.amazonaws.com/{config.AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json"
-)
+jwks_client = jwt.PyJWKClient(config.get_parameter("AWS_COGNITO_JWK_URI"))
 
 
 class CognitoTokenUse(Enum):
@@ -70,7 +69,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
                 token,
                 signing_key.key,
                 algorithms=["RS256"],
-                issuer=f"https://cognito-idp.{self.aws_default_region}.amazonaws.com/{self.cognito_user_pool_id}",
+                issuer=config.get_parameter("AWS_COGNITO_ISSUER_URI"),
                 options={
                     "verify_aud": False,
                     "verify_signature": True,
@@ -123,18 +122,20 @@ class CognitoJWTAuthorizer(HTTPBearer):
             )
 
 
+aws_client = AWSClientAdapter(client_type="sts")
+
 cognito_jwt_authorizer_access_token = CognitoJWTAuthorizer(
     CognitoTokenUse.ACCESS,
-    config.AWS_REGION_NAME,
-    config.AWS_COGNITO_USER_POOL_ID,
-    config.AWS_COGNITO_APP_CLIENT_ID,
+    aws_client.aws_region_name,
+    config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
+    config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
     jwks_client,
 )
 
 cognito_jwt_authorizer_access_id = CognitoJWTAuthorizer(
     CognitoTokenUse.ID,
-    config.AWS_REGION_NAME,
-    config.AWS_COGNITO_USER_POOL_ID,
-    config.AWS_COGNITO_APP_CLIENT_ID,
+    aws_client.aws_region_name,
+    config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
+    config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
     jwks_client,
 )

@@ -17,6 +17,10 @@ _The authentication service is based on Cognito, as localstack does not provide 
 
 You can execute the command `docker-compose up` then `make apply-dkr-command-migrations``
 
+#### Moto Server
+
+We are using `moto server` to mock aws services, a dashboard can be seen at `http://localhost:5000/moto-api/`.
+
 ### Cloud Deploy
 
 First you need to create the ecr repositories `ecs-todo-auth` and `ecs-todo-command` manually. Then run the command `make push`.

@@ -1,3 +1,6 @@
+PROJECT_NAME=todo-microservices
+AWS_ENDPOINT_URL=http://localhost:5000
+
 fetch-local-parameters:
 	@echo "Fetching Local SSM parameters..."
 	$(eval POSTGRES_CONTAINER_NAME := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/rds/postgres/rds_instance_host" --query "Parameter.Value" --output text --endpoint-url=$(AWS_ENDPOINT_URL)))
