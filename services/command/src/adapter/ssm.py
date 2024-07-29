@@ -11,10 +11,10 @@ logger = logging.getLogger()
 
 class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStoreInterface):
     PARAMETER_MAPPING = {
-        "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/cognito_app_pool_id",
-        "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/cognito_app_client_id",
-        "AWS_COGNITO_JWK_URI": "/todo-microservices/cognito/cognito_jwk_uri",
-        "AWS_COGNITO_ISSUER_URI": "/todo-microservices/cognito/cognito_issuer_uri",
+        "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/main/cognito_app_pool_id",
+        "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/main/cognito_app_client_id",
+        "AWS_COGNITO_JWK_URI": "/todo-microservices/cognito/main/cognito_jwk_uri",
+        "AWS_COGNITO_ISSUER_URI": "/todo-microservices/cognito/main/cognito_issuer_uri",
         "DATABASE_DB_NAME": "/todo-microservices/rds/main/rds_instance_db_name",
         "DATABASE_USER": "/todo-microservices/rds/main/rds_instance_user",
         "DATABASE_PASSWORD": "/todo-microservices/rds/main/rds_instance_password",
