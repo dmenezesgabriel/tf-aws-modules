@@ -7,14 +7,27 @@ terraform {
   }
 }
 
+locals {
+  vpc_enabled        = true
+  rds_enabled        = false
+  dynamodb_enabled   = false
+  bastion_enabled    = false
+  sqs_enabled        = false
+  cognito_enabled    = false
+  documentdb_enabled = false
+  ecs_enabled        = false
+}
+
 provider "aws" {
   profile = var.aws_profile
   region  = var.aws_region_name
 }
 
-
 module "vpc" {
+  count = local.vpc_enabled ? 1 : 0
+
   source = "../../modules/vpc"
+
 
   aws_profile              = var.aws_profile
   aws_region_name          = var.aws_region_name
@@ -23,6 +36,8 @@ module "vpc" {
 }
 
 module "rds" {
+  count = local.rds_enabled ? 1 : 0
+
   source = "../../modules/rds"
 
   name                             = "main"
@@ -44,27 +59,31 @@ module "rds" {
   save_to_ssm                      = true
 }
 
-# module "documentdb" {
-#   source = "../../modules/documentdb"
+module "documentdb" {
+  count = local.documentdb_enabled ? 1 : 0
 
-#   name                           = "main"
-#   aws_profile                    = var.aws_profile
-#   aws_region_name                = var.aws_region_name
-#   project_name                   = var.project_name
-#   documentdb_engine              = "docdb"
-#   documentdb_user                = "documentdb"
-#   documentdb_password            = "documentdb"
-#   documentdb_port                = 27017
-#   documentdb_instance_count      = 1
-#   documentdb_instance_class      = "db.t3.medium"
-#   documentdb_skip_final_snapshot = true
-#   documentdb_disable_tls         = true
-#   subnet_ids                     = module.vpc.private_subnets_ids[*]
-#   vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
-#   save_to_ssm                    = true
-# }
+  source = "../../modules/documentdb"
+
+  name                           = "main"
+  aws_profile                    = var.aws_profile
+  aws_region_name                = var.aws_region_name
+  project_name                   = var.project_name
+  documentdb_engine              = "docdb"
+  documentdb_user                = "documentdb"
+  documentdb_password            = "documentdb"
+  documentdb_port                = 27017
+  documentdb_instance_count      = 1
+  documentdb_instance_class      = "db.t3.medium"
+  documentdb_skip_final_snapshot = true
+  documentdb_disable_tls         = true
+  subnet_ids                     = module.vpc.private_subnets_ids[*]
+  vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
+  save_to_ssm                    = true
+}
 
 module "dynamodb" {
+  count = local.dynamodb_enabled ? 1 : 0
+
   source = "../../modules/dynamodb"
 
   aws_profile           = var.aws_profile
@@ -85,6 +104,8 @@ data "aws_ssm_parameter" "ecs_node_ami" {
 }
 
 module "bastion" {
+  count = local.bastion_enabled ? 1 : 0
+
   source = "../../modules/bastion"
 
   name                         = "main"
@@ -122,20 +143,24 @@ module "bastion" {
 }
 
 module "sqs" {
+  count = local.sqs_enabled ? 1 : 0
+
   source = "../../modules/sqs"
 
-  name                      = "main"
-  aws_profile               = var.aws_profile
-  aws_region_name           = var.aws_region_name
-  project_name              = var.project_name
-  delay_seconds             = 0
-  max_message_size          = 262144
-  message_retention_seconds = 345600
-  receive_wait_time_seconds = 0
+  sqs_queue_name                      = "main"
+  aws_profile                         = var.aws_profile
+  aws_region_name                     = var.aws_region_name
+  project_name                        = var.project_name
+  sqs_queue_delay_seconds             = 0
+  sqs_queue_max_message_size          = 262144
+  sqs_queue_message_retention_seconds = 345600
+  sqs_queue_receive_wait_time_seconds = 0
 }
 
 
 module "cognito" {
+  count = local.cognito_enabled ? 1 : 0
+
   source = "../../modules/cognito"
 
   name            = "main"
@@ -193,14 +218,16 @@ module "cognito" {
   save_to_ssm = true
 }
 
-# module "ecs" {
-#   source = "../../modules/ecs"
+module "ecs" {
+  count = local.ecs_enabled ? 1 : 0
 
-#   name               = "main"
-#   aws_profile        = var.aws_profile
-#   aws_region_name    = var.aws_region_name
-#   project_name       = var.project_name
-#   vpc_id             = module.vpc.vpc_id
-#   private_subnet_ids = module.vpc.private_subnets_ids[*]
-#   public_subnet_ids  = module.vpc.public_subnets_ids[*]
-# }
+  source = "../../modules/ecs"
+
+  name               = "main"
+  aws_profile        = var.aws_profile
+  aws_region_name    = var.aws_region_name
+  project_name       = var.project_name
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets_ids[*]
+  public_subnet_ids  = module.vpc.public_subnets_ids[*]
+}
