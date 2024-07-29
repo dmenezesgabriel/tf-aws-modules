@@ -44,24 +44,40 @@ module "rds" {
   save_to_ssm                      = true
 }
 
-module "documentdb" {
-  source = "../../modules/documentdb"
+# module "documentdb" {
+#   source = "../../modules/documentdb"
 
-  name                           = "main"
-  aws_profile                    = var.aws_profile
-  aws_region_name                = var.aws_region_name
-  project_name                   = var.project_name
-  documentdb_engine              = "docdb"
-  documentdb_user                = "documentdb"
-  documentdb_password            = "documentdb"
-  documentdb_port                = 27017
-  documentdb_instance_count      = 1
-  documentdb_instance_class      = "db.t3.medium"
-  documentdb_skip_final_snapshot = true
-  documentdb_disable_tls         = true
-  subnet_ids                     = module.vpc.private_subnets_ids[*]
-  vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
-  save_to_ssm                    = true
+#   name                           = "main"
+#   aws_profile                    = var.aws_profile
+#   aws_region_name                = var.aws_region_name
+#   project_name                   = var.project_name
+#   documentdb_engine              = "docdb"
+#   documentdb_user                = "documentdb"
+#   documentdb_password            = "documentdb"
+#   documentdb_port                = 27017
+#   documentdb_instance_count      = 1
+#   documentdb_instance_class      = "db.t3.medium"
+#   documentdb_skip_final_snapshot = true
+#   documentdb_disable_tls         = true
+#   subnet_ids                     = module.vpc.private_subnets_ids[*]
+#   vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
+#   save_to_ssm                    = true
+# }
+
+module "dynamodb" {
+  source = "../../modules/dynamodb"
+
+  aws_profile           = var.aws_profile
+  aws_region_name       = var.aws_region_name
+  project_name          = var.project_name
+  dynamodb_table_name   = "${var.project_name}-todos"
+  dynamodb_billing_mode = "PAY_PER_REQUEST"
+  dynamodb_hash_key     = "title"
+  dynamodb_table_attributes = [{
+    name = "title"
+    type = "S"
+    },
+  ]
 }
 
 data "aws_ssm_parameter" "ecs_node_ami" {

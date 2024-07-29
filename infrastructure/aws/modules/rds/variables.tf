@@ -9,8 +9,7 @@ variable "aws_profile" {
 }
 
 variable "project_name" {
-  type    = string
-  default = "todo-microservices"
+  type = string
 }
 
 variable "name" {

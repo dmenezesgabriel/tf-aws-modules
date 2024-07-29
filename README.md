@@ -102,3 +102,4 @@ mongosh --host endpoint:27017 --username username --password password
 - [create-an-api-with-a-private-integration-to-an-aws-ecs-service-with-terraform-iac](https://dev.to/devops4mecode/create-an-api-with-a-private-integration-to-an-aws-ecs-service-with-terraform-iac-3aj4)
 - [aws-http-gateway-with-cognito-and-terraform](https://andrewtarry.com/posts/aws-http-gateway-with-cognito-and-terraform/)
 - [terraform-modules-101-create-version-and-publish-on-github](https://medium.com/nerd-for-tech/terraform-modules-101-create-version-and-publish-on-github-4455f3673559#f790)
+- [ecs-fargate-with-alb-deployment-using-terraform](https://medium.com/the-cloud-journal/ecs-fargate-with-alb-deployment-using-terraform-part-2-5547408be49a)
