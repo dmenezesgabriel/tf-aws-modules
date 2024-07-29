@@ -13,17 +13,16 @@ provider "aws" {
 }
 
 resource "aws_docdb_cluster_parameter_group" "main" {
-  count  = var.documentdb_disable_tls ? 1 : 0
   family = var.documentdb_family
 
   parameter {
     name  = "tls"
-    value = "disabled"
+    value = var.documentdb_disable_tls ? "disabled" : "enabled"
   }
 }
 
 resource "aws_docdb_cluster" "main" {
-  cluster_identifier              = "${var.project_name}-${var.name}-docdb-cluster"
+  cluster_identifier              = "${var.project_name}-docdb-${var.name}-cluster"
   engine                          = var.documentdb_engine
   master_username                 = var.documentdb_user
   master_password                 = var.documentdb_password
@@ -40,21 +39,21 @@ resource "aws_docdb_cluster" "main" {
 
 resource "aws_docdb_cluster_instance" "main" {
   count              = var.documentdb_instance_count
-  identifier         = "${var.project_name}-${name}-documentdb-instance-${count.index}"
+  identifier         = "${var.project_name}-documentdb-instance-${var.name}-${count.index}"
   cluster_identifier = aws_docdb_cluster.main.id
   instance_class     = var.documentdb_instance_class
 
   tags = {
-    Name = "${var.project_name}-${var.name}-documentdb-instance-${count.index}"
+    Name = "${var.project_name}-documentdb-instance-${var.name}-${count.index}"
   }
 }
 
 
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-document-db-subnet-group"
+  name       = "${var.project_name}-documentdb-${var.name}-subnet-group"
   subnet_ids = var.subnet_ids
 
   tags = {
-    Name = "${var.project_name}-subnet-group"
+    Name = "${var.project_name}-documentdb-${var.name}subnet-group"
   }
 }
