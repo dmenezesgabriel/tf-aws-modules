@@ -104,3 +104,17 @@ module "bastion" {
   ]
   save_to_ssm = true
 }
+
+module "sqs" {
+  source = "../../modules/sqs"
+
+  name                      = "main"
+  aws_profile               = var.aws_profile
+  aws_region_name           = var.aws_region_name
+  project_name              = var.project_name
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 345600
+  receive_wait_time_seconds = 0
+}
+

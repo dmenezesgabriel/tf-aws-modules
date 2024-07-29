@@ -42,8 +42,7 @@ variable "receive_wait_time_seconds" {
   default     = 0
 }
 
-variable "tags" {
-  description = "A mapping of tags to assign to the queue."
-  type        = map(string)
-  default     = {}
+variable "save_to_ssm" {
+  type    = bool
+  default = true
 }
