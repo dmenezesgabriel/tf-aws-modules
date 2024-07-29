@@ -1,7 +1,7 @@
-resource "aws_ssm_parameter" "cognito_app_client_id" {
+resource "aws_ssm_parameter" "cognito_user_pool_client_id" {
   count = var.save_to_ssm ? 1 : 0
 
-  name  = "/${var.project_name}/cognito/${var.name}/cognito_app_client_id"
+  name  = "/${var.project_name}/cognito/${var.name}/cognito_user_pool_client_id"
   type  = "String"
   value = aws_cognito_user_pool_client.main.id
 }

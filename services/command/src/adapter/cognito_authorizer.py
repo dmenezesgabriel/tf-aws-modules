@@ -24,7 +24,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
         required_token_use: CognitoTokenUse,
         aws_default_region: str,
         cognito_user_pool_id: str,
-        cognito_app_client_id: str,
+        cognito_user_pool_client_id: str,
         jwks_client: jwt.PyJWKClient,
         auto_error: bool = True,
     ) -> None:
@@ -32,7 +32,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
         self.required_token_use = required_token_use
         self.aws_default_region = aws_default_region
         self.cognito_user_pool_id = cognito_user_pool_id
-        self.cognito_app_client_id = cognito_app_client_id
+        self.cognito_user_pool_client_id = cognito_user_pool_client_id
         self.jwks_client = jwks_client
 
     async def __call__(self, request: Request):
@@ -96,7 +96,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
                 )
-            if claims["aud"] != self.cognito_app_client_id:
+            if claims["aud"] != self.cognito_user_pool_client_id:
                 logger.error(6)
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
@@ -107,7 +107,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
                 )
-            if claims["client_id"] != self.cognito_app_client_id:
+            if claims["client_id"] != self.cognito_user_pool_client_id:
                 logger.error(8)
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"

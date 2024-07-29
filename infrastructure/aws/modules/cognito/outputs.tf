@@ -1,4 +1,4 @@
-output "cognito_app_client_id" {
+output "cognito_user_pool_client_id" {
   value = aws_cognito_user_pool_client.main.id
 }
 

@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws",
-      version = "5.17.0"
+      version = "~> 5.0"
     }
   }
 }
@@ -12,34 +12,6 @@ provider "aws" {
   region  = var.aws_region_name
 }
 
-
-data "aws_vpc" "main" {
-  tags = { Name = "${var.project_name}-vpc" }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
-  }
-
-  filter {
-    name   = "tag:Type"
-    values = ["private"]
-  }
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
-  }
-
-  filter {
-    name   = "tag:Type"
-    values = ["public"]
-  }
-}
 
 data "aws_security_group" "ecs_task" {
   name = "${var.project_name}-ecs-task-sg"
@@ -52,7 +24,7 @@ data "aws_security_group" "ecs_node_sg" {
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
-  name = "${var.project_name}-cluster"
+  name = "${var.project_name}-cluster-${var.name}"
 }
 
 # --- ECS Node Role ---
@@ -112,7 +84,7 @@ resource "aws_launch_template" "ecs_ec2" {
 
 resource "aws_autoscaling_group" "ecs" {
   name_prefix               = "${var.project_name}-ecs-asg-"
-  vpc_zone_identifier       = data.aws_subnets.private.ids[*]
+  vpc_zone_identifier       = var.private_subnet_ids
   min_size                  = 2
   max_size                  = 4
   health_check_grace_period = 0
@@ -347,8 +319,8 @@ data "aws_ssm_parameter" "rds_instance_password" {
   name = "/${var.project_name}/rds/postgres/rds_instance_password"
 }
 
-data "aws_ssm_parameter" "cognito_app_client_id" {
-  name = "/${var.project_name}/cognito/cognito_app_client_id"
+data "aws_ssm_parameter" "cognito_user_pool_client_id" {
+  name = "/${var.project_name}/cognito/cognito_user_pool_client_id"
 }
 
 data "aws_ssm_parameter" "cognito_app_pool_id" {
@@ -376,7 +348,7 @@ resource "aws_ecs_task_definition" "apps" {
     secrets = [
       {
         name      = "AWS_COGNITO_APP_CLIENT_ID"
-        valueFrom = data.aws_ssm_parameter.cognito_app_client_id.arn
+        valueFrom = data.aws_ssm_parameter.cognito_user_pool_client_id.arn
       },
       {
         name      = "AWS_COGNITO_USER_POOL_ID"
@@ -439,7 +411,7 @@ resource "aws_ecs_service" "apps" {
 
   network_configuration {
     security_groups = [data.aws_security_group.ecs_task.id]
-    subnets         = data.aws_subnets.private.ids[*]
+    subnets         = var.private_subnet_ids
   }
 
   capacity_provider_strategy {
@@ -463,7 +435,7 @@ resource "aws_ecs_service" "apps" {
 resource "aws_security_group" "http" {
   name_prefix = "${var.project_name}-http-sg-"
   description = "Allow all HTTP/HTTPS traffic from public"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   dynamic "ingress" {
     for_each = [80, 443]
@@ -486,14 +458,14 @@ resource "aws_security_group" "http" {
 resource "aws_lb" "main" {
   name               = "${var.project_name}-alb"
   load_balancer_type = "application"
-  subnets            = data.aws_subnets.public.ids[*]
+  subnets            = var.public_subnet_ids
   security_groups    = [aws_security_group.http.id]
 }
 
 resource "aws_lb_target_group" "apps" {
   for_each    = var.applications
   name        = each.value.name
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = var.vpc_id
   protocol    = "HTTP"
   port        = each.value.port
   target_type = "ip"

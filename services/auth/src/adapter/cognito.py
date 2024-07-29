@@ -23,14 +23,14 @@ class AWSCognitoAdapter(AWSClientAdapter):
         self.cognito_app_pool_id = config.get_parameter(
             "AWS_COGNITO_USER_POOL_ID"
         )
-        self.cognito_app_client_id = config.get_parameter(
+        self.cognito_user_pool_client_id = config.get_parameter(
             "AWS_COGNITO_APP_CLIENT_ID"
         )
 
     def user_signup(self, user: UserSignup):
         try:
             response = self.client.sign_up(
-                ClientId=self.cognito_app_client_id,
+                ClientId=self.cognito_user_pool_client_id,
                 Username=user.email,
                 Password=user.password,
                 UserAttributes=[
@@ -56,7 +56,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def verify_account(self, data: UserVerify):
         try:
             response = self.client.confirm_sign_up(
-                ClientId=self.cognito_app_client_id,
+                ClientId=self.cognito_user_pool_client_id,
                 Username=data.email,
                 ConfirmationCode=data.confirmation_code,
             )
@@ -71,7 +71,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def resend_confirmation_code(self, email: EmailStr):
         try:
             response = self.client.resend_confirmation_code(
-                ClientId=self.cognito_app_client_id, Username=email
+                ClientId=self.cognito_user_pool_client_id, Username=email
             )
             return response
         except botocore.exceptions.ClientError as error:
@@ -97,7 +97,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def user_signin(self, data: UserSignin):
         try:
             response = self.client.initiate_auth(
-                ClientId=self.cognito_app_client_id,
+                ClientId=self.cognito_user_pool_client_id,
                 AuthFlow="USER_PASSWORD_AUTH",
                 AuthParameters={
                     "USERNAME": data.email,
@@ -115,7 +115,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def forgot_password(self, email: EmailStr):
         try:
             response = self.client.forgot_password(
-                ClientId=self.cognito_app_client_id, Username=email
+                ClientId=self.cognito_user_pool_client_id, Username=email
             )
             return response
         except botocore.exceptions.ClientError as error:
@@ -128,7 +128,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def confirm_forgot_password(self, data: ConfirmForgotPassword):
         try:
             response = self.client.confirm_forgot_password(
-                ClientId=self.cognito_app_client_id,
+                ClientId=self.cognito_user_pool_client_id,
                 Username=data.email,
                 ConfirmationCode=data.confirmation_code,
                 Password=data.new_password,
@@ -159,7 +159,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
     def new_access_token(self, refresh_token: str):
         try:
             response = self.client.initiate_auth(
-                ClientId=self.cognito_app_client_id,
+                ClientId=self.cognito_user_pool_client_id,
                 AuthFlow="REFRESH_TOKEN_AUTH",
                 AuthParameters={
                     "REFRESH_TOKEN": refresh_token,
