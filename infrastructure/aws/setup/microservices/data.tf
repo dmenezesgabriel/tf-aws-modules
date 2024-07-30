@@ -98,4 +98,14 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
     effect    = "Allow"
     resources = ["*"]
   }
+
+  statement {
+    actions = [
+      "logs:DescribeLogStreams",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
 }

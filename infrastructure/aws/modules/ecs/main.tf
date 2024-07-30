@@ -12,15 +12,6 @@ provider "aws" {
   region  = var.aws_region_name
 }
 
-
-data "aws_security_group" "ecs_task" {
-  name = "${var.project_name}-ecs-task-sg"
-}
-
-data "aws_security_group" "ecs_node_sg" {
-  name = "${var.project_name}-ecs-node-sg"
-}
-
 # --- ECS Cluster ---
 
 resource "aws_ecs_cluster" "main" {
@@ -155,16 +146,33 @@ data "aws_iam_policy_document" "ecs_task_doc" {
 resource "aws_iam_role" "ecs_task_role" {
   for_each = var.services
 
-  name_prefix        = "${var.project_name}-ecs-${each.key}-task-role"
-  assume_role_policy = each.value.task_role_policy
+  name_prefix        = "${var.project_name}-${each.key}-task-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
 }
 
 resource "aws_iam_role" "ecs_task_exec_role" {
   for_each = var.services
 
-  name_prefix        = "${var.project_name}-ecs-${each.key}exec-role"
-  assume_role_policy = each.value.task_execution_role_policy
+  name_prefix        = "${var.project_name}-${each.key}-exec-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
 }
+
+resource "aws_iam_role_policy" "ecs_task_access_policy" {
+  for_each = var.services
+
+  name   = "${var.project_name}-${each.key}-task-policy"
+  role   = aws_iam_role.ecs_task_role[each.key].name
+  policy = each.value.task_role_policy
+}
+
+resource "aws_iam_role_policy" "ecs_task_exec_access_policy" {
+  for_each = var.services
+
+  name   = "${var.project_name}-${each.key}-exec-policy"
+  role   = aws_iam_role.ecs_task_exec_role[each.key].name
+  policy = each.value.task_execution_role_policy
+}
+
 
 resource "aws_iam_role_policy_attachment" "ecs_task_exec_role_policy" {
   for_each = var.services
@@ -195,8 +203,8 @@ output "aws_ecr_repository_apps" {
 resource "aws_ecs_task_definition" "apps" {
   for_each           = var.services
   family             = "${var.project_name}-${each.key}"
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
-  execution_role_arn = aws_iam_role.ecs_task_exec_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role[each.key].arn
+  execution_role_arn = aws_iam_role.ecs_task_exec_role[each.key].arn
   network_mode       = each.value.network_mode
   cpu                = each.value.cpu
   memory             = each.value.memory
@@ -238,7 +246,7 @@ resource "aws_ecs_service" "apps" {
   }
 
   network_configuration {
-    security_groups = [data.aws_security_group.ecs_task.id]
+    security_groups = var.vpc_security_group_ids
     subnets         = var.services_subnet_ids
   }
 
@@ -264,7 +272,7 @@ resource "aws_lb" "main" {
   name               = "${var.project_name}-alb"
   load_balancer_type = "application"
   subnets            = var.load_balancer_subnet_ids
-  security_groups    = [var.load_balancer_security_group_id]
+  security_groups    = var.load_balancer_security_group_id
 }
 
 resource "aws_lb_target_group" "apps" {

@@ -41,8 +41,8 @@ variable "services" {
     port                       = number
     path                       = string
     health_path                = string
-    task_role_policy           = map(string)
-    task_execution_role_policy = map(string)
+    task_role_policy           = string
+    task_execution_role_policy = string
     network_mode               = string
     cpu                        = number
     memory                     = number
@@ -121,5 +121,5 @@ variable "default_capacity_provider_strategy_weight" {
 }
 
 variable "load_balancer_security_group_id" {
-  type = string
+  type = list(string)
 }

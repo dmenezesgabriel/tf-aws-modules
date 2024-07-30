@@ -7,16 +7,6 @@ terraform {
   }
 }
 
-locals {
-  vpc_enabled        = true
-  rds_enabled        = false
-  dynamodb_enabled   = false
-  bastion_enabled    = false
-  sqs_enabled        = false
-  cognito_enabled    = false
-  documentdb_enabled = false
-  ecs_enabled        = false
-}
 
 provider "aws" {
   profile = var.aws_profile
@@ -24,10 +14,7 @@ provider "aws" {
 }
 
 module "vpc" {
-  count = local.vpc_enabled ? 1 : 0
-
   source = "../../modules/vpc"
-
 
   aws_profile              = var.aws_profile
   aws_region_name          = var.aws_region_name
@@ -36,8 +23,6 @@ module "vpc" {
 }
 
 module "rds" {
-  count = local.rds_enabled ? 1 : 0
-
   source = "../../modules/rds"
 
   name                             = "main"
@@ -59,53 +44,61 @@ module "rds" {
   save_to_ssm                      = true
 }
 
-module "documentdb" {
-  count = local.documentdb_enabled ? 1 : 0
+# module "documentdb" {
+#   source = "../../modules/documentdb"
 
-  source = "../../modules/documentdb"
+#   name                           = "main"
+#   aws_profile                    = var.aws_profile
+#   aws_region_name                = var.aws_region_name
+#   project_name                   = var.project_name
+#   documentdb_engine              = "docdb"
+#   documentdb_user                = "documentdb"
+#   documentdb_password            = "documentdb"
+#   documentdb_port                = 27017
+#   documentdb_instance_count      = 1
+#   documentdb_instance_class      = "db.t3.medium"
+#   documentdb_skip_final_snapshot = true
+#   documentdb_disable_tls         = true
+#   subnet_ids                     = module.vpc.private_subnets_ids[*]
+#   vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
+#   save_to_ssm                    = true
+# }
 
-  name                           = "main"
-  aws_profile                    = var.aws_profile
-  aws_region_name                = var.aws_region_name
-  project_name                   = var.project_name
-  documentdb_engine              = "docdb"
-  documentdb_user                = "documentdb"
-  documentdb_password            = "documentdb"
-  documentdb_port                = 27017
-  documentdb_instance_count      = 1
-  documentdb_instance_class      = "db.t3.medium"
-  documentdb_skip_final_snapshot = true
-  documentdb_disable_tls         = true
-  subnet_ids                     = module.vpc.private_subnets_ids[*]
-  vpc_security_group_ids         = [aws_security_group.document_db_sg.id]
-  save_to_ssm                    = true
-}
+# module "dynamodb" {
+#   source = "../../modules/dynamodb"
 
-module "dynamodb" {
-  count = local.dynamodb_enabled ? 1 : 0
+#   aws_profile           = var.aws_profile
+#   aws_region_name       = var.aws_region_name
+#   project_name          = var.project_name
+#   dynamodb_table_name   = "${var.project_name}-todos"
+#   dynamodb_billing_mode = "PAY_PER_REQUEST"
+#   dynamodb_hash_key     = "title"
+#   dynamodb_table_attributes = [{
+#     name = "title"
+#     type = "S"
+#     },
+#   ]
+# }
 
-  source = "../../modules/dynamodb"
+# module "sqs" {
+#   source = "../../modules/sqs"
 
-  aws_profile           = var.aws_profile
-  aws_region_name       = var.aws_region_name
-  project_name          = var.project_name
-  dynamodb_table_name   = "${var.project_name}-todos"
-  dynamodb_billing_mode = "PAY_PER_REQUEST"
-  dynamodb_hash_key     = "title"
-  dynamodb_table_attributes = [{
-    name = "title"
-    type = "S"
-    },
-  ]
-}
+#   sqs_queue_name                      = "main"
+#   aws_profile                         = var.aws_profile
+#   aws_region_name                     = var.aws_region_name
+#   project_name                        = var.project_name
+#   sqs_queue_delay_seconds             = 0
+#   sqs_queue_max_message_size          = 262144
+#   sqs_queue_message_retention_seconds = 345600
+#   sqs_queue_receive_wait_time_seconds = 0
+# }
+
 
 data "aws_ssm_parameter" "ecs_node_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 }
 
 module "bastion" {
-  count = local.bastion_enabled ? 1 : 0
-
   source = "../../modules/bastion"
 
   name                         = "main"
@@ -142,25 +135,8 @@ module "bastion" {
   save_to_ssm = true
 }
 
-module "sqs" {
-  count = local.sqs_enabled ? 1 : 0
-
-  source = "../../modules/sqs"
-
-  sqs_queue_name                      = "main"
-  aws_profile                         = var.aws_profile
-  aws_region_name                     = var.aws_region_name
-  project_name                        = var.project_name
-  sqs_queue_delay_seconds             = 0
-  sqs_queue_max_message_size          = 262144
-  sqs_queue_message_retention_seconds = 345600
-  sqs_queue_receive_wait_time_seconds = 0
-}
-
 
 module "cognito" {
-  count = local.cognito_enabled ? 1 : 0
-
   source = "../../modules/cognito"
 
   name            = "main"
@@ -220,8 +196,6 @@ module "cognito" {
 
 
 module "ecs" {
-  count = local.ecs_enabled ? 1 : 0
-
   source = "../../modules/ecs"
 
   name                                        = "main"
@@ -239,12 +213,12 @@ module "ecs" {
   autoscaling_group_health_check_grace_period = 0
   autoscaling_group_health_check_type         = "EC2"
   autoscaling_group_protect_from_scale_in     = false
-  auto_scaling_group_termination_protection   = false
+  auto_scaling_group_termination_protection   = "DISABLED"
   services = {
     auth = {
       name                       = "auth"
       aws_ecr_repository_name    = "ecs-todo-auth"
-      image_tag                  = "latest"
+      image_tag                  = "20240730091144"
       port                       = 80
       path                       = "/auth/"
       health_path                = "/auth/"
@@ -263,7 +237,7 @@ module "ecs" {
     command = {
       name                       = "command"
       aws_ecr_repository_name    = "ecs-todo-command"
-      image_tag                  = "latest"
+      image_tag                  = "20240730091144"
       port                       = 80
       path                       = "/command/"
       health_path                = "/command/"
@@ -280,4 +254,24 @@ module "ecs" {
       ]
     }
   }
+}
+
+
+module "batch" {
+  source = "../../modules/batch"
+
+  name                        = "todo-command-alambic-migration"
+  aws_profile                 = var.aws_profile
+  aws_region_name             = var.aws_region_name
+  project_name                = var.project_name
+  image_tag                   = "20240730091144"
+  ecs_repository_name         = "ecs-todo-command"
+  command                     = ["alembic", "-c", "migrations/alembic/alembic.ini", "upgrade", "head"]
+  batch_policy                = data.aws_iam_policy_document.ecs_access_policy_doc.json
+  compute_resource_subnet_ids = module.vpc.private_subnets_ids[*]
+  security_group_ids          = [aws_security_group.ecs_node_sg.id]
+  environment = [
+    { name = "AWS_REGION_NAME", value = var.aws_region_name },
+    { name = "ENVIRONMENT", value = "staging" }
+  ]
 }

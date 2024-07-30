@@ -74,29 +74,6 @@ resource "aws_security_group" "ecs_node_sg" {
   }
 }
 
-
-resource "aws_security_group" "ecs_task" {
-  name        = "${var.project_name}-ecs-task-sg"
-  description = "Allow all traffic within the VPC"
-  vpc_id      = module.vpc.vpc_id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol    = "tcp"
-      from_port   = ingress.value
-      to_port     = ingress.value
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-  egress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_security_group" "bastion_host" {
   name        = "${var.project_name}-bastion-host"
   description = "Allow SSH"
