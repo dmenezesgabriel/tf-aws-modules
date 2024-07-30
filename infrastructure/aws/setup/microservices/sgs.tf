@@ -136,3 +136,27 @@ resource "aws_security_group" "bastion_host" {
     Name = "${var.project_name}-bastion-host-security-group"
   }
 }
+
+resource "aws_security_group" "load_balancer" {
+  name_prefix = "${var.project_name}-http-sg-"
+  description = "Allow all HTTP/HTTPS traffic from public"
+  vpc_id      = module.vpc.vpc_id
+
+
+  dynamic "ingress" {
+    for_each = [80, 443]
+    content {
+      protocol    = "tcp"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "ecs_node_doc" {
 }
 
 resource "aws_iam_role" "ecs_node_role" {
-  name_prefix        = "${var.project_name}-ecs-node-role"
+  name_prefix        = "${var.project_name}-ecs-${var.name}-node-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_node_doc.json
 }
 
@@ -52,7 +52,7 @@ resource "aws_iam_role_policy_attachment" "ecs_node_role_policy" {
 }
 
 resource "aws_iam_instance_profile" "ecs_node" {
-  name_prefix = "${var.project_name}-ecs-node-profile"
+  name_prefix = "${var.project_name}-ecs-${var.name}-node-profile"
   path        = "/ecs/instance/"
   role        = aws_iam_role.ecs_node_role.name
 }
@@ -65,10 +65,10 @@ data "aws_ssm_parameter" "ecs_node_ami" {
 }
 
 resource "aws_launch_template" "ecs_ec2" {
-  name_prefix            = "${var.project_name}-ecs-ec2-"
+  name_prefix            = "${var.project_name}-ecs-${var.name}-ec2-"
   image_id               = data.aws_ssm_parameter.ecs_node_ami.value
   instance_type          = var.ec2_instance_type
-  vpc_security_group_ids = [data.aws_security_group.ecs_node_sg.id]
+  vpc_security_group_ids = var.vpc_security_group_ids
 
   iam_instance_profile { arn = aws_iam_instance_profile.ecs_node.arn }
   monitoring { enabled = true }
@@ -84,12 +84,12 @@ resource "aws_launch_template" "ecs_ec2" {
 
 resource "aws_autoscaling_group" "ecs" {
   name_prefix               = "${var.project_name}-ecs-asg-"
-  vpc_zone_identifier       = var.private_subnet_ids
-  min_size                  = 2
-  max_size                  = 4
-  health_check_grace_period = 0
-  health_check_type         = "EC2"
-  protect_from_scale_in     = false
+  vpc_zone_identifier       = var.services_subnet_ids
+  min_size                  = var.autoscaling_group_min_size
+  max_size                  = var.autoscaling_group_max_size
+  health_check_grace_period = var.autoscaling_group_health_check_grace_period
+  health_check_type         = var.autoscaling_group_health_check_type
+  protect_from_scale_in     = var.autoscaling_group_protect_from_scale_in
 
   launch_template {
     id      = aws_launch_template.ecs_ec2.id
@@ -98,7 +98,7 @@ resource "aws_autoscaling_group" "ecs" {
 
   tag {
     key                 = "Name"
-    value               = "${var.project_name}-ecs-cluster"
+    value               = "${var.project_name}-ecs-${var.name}-cluster"
     propagate_at_launch = true
   }
 
@@ -112,17 +112,17 @@ resource "aws_autoscaling_group" "ecs" {
 # --- ECS Capacity Provider ---
 
 resource "aws_ecs_capacity_provider" "main" {
-  name = "${var.project_name}-ecs-ec2"
+  name = "${var.project_name}-ecs-${var.name}-ec2"
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.ecs.arn
-    managed_termination_protection = "DISABLED"
+    managed_termination_protection = var.auto_scaling_group_termination_protection
 
     managed_scaling {
-      maximum_scaling_step_size = 2
-      minimum_scaling_step_size = 1
-      status                    = "ENABLED"
-      target_capacity           = 100
+      maximum_scaling_step_size = var.auto_scaling_group_maximum_scaling_step_size
+      minimum_scaling_step_size = var.auto_scaling_group_minimum_scaling_step_size
+      status                    = var.auto_scaling_group_managed_scaling_status
+      target_capacity           = var.auto_scaling_group_managed_scaling_target_capacity
     }
   }
 }
@@ -133,123 +133,9 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 
   default_capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
-    base              = 1
-    weight            = 100
+    base              = var.default_capacity_provider_strategy_base
+    weight            = var.default_capacity_provider_strategy_weight
   }
-}
-
-# --- ECS Task policies ---
-data "aws_iam_policy_document" "ecs_access_policy_doc" {
-  statement {
-    actions = [
-      "ssm:GetParameter",
-      "ssm:GetParameters",
-      "ssm:GetParametersByPath"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "sqs:SendMessage",
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-      "sqs:GetQueueUrl"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "rds:DescribeDBInstances",
-      "rds:DescribeDBClusters",
-      "rds:DescribeDBSnapshots",
-      "rds:DescribeDBClusterSnapshots"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "docdb:Connect",
-      "docdb:DescribeDBInstances",
-      "docdb:ListTagsForResource",
-      "docdb:ModifyDBClusterParameterGroup",
-      "docdb:ModifyDBClusterSnapshotAttribute",
-      "docdb:ModifyDBInstance",
-      "docdb:DescribeDBClusters",
-      "docdb:CreateDBCluster",
-      "docdb:DeleteDBCluster",
-      "docdb:ListTagsForResource",
-      "docdb:CreateDBClusterSnapshot",
-      "docdb:ModifyDBCluster",
-      "docdb:RebootDBInstance",
-      "docdb:RestoreDBClusterToPointInTime"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:ListBucket",
-      "s3:ListAllMyBuckets"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "cognito-idp:SignUp",
-      "cognito-idp:ConfirmSignUp",
-      "cognito-idp:ResendConfirmationCode",
-      "cognito-idp:AdminGetUser",
-      "cognito-idp:InitiateAuth",
-      "cognito-idp:ForgotPassword",
-      "cognito-idp:ConfirmForgotPassword",
-      "cognito-idp:ChangePassword",
-      "cognito-idp:GlobalSignOut"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "ssmmessages:CreateControlChannel",
-      "ssmmessages:CreateDataChannel",
-      "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "ecs:ExecuteCommand"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "ecs_task_access_policy" {
-  name   = "ecs-task-ssm-policy"
-  role   = aws_iam_role.ecs_task_role.name
-  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
-}
-
-resource "aws_iam_role_policy" "ecs_exec_access_policy" {
-  name   = "ecs-exec-ssm-policy"
-  role   = aws_iam_role.ecs_exec_role.name
-  policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
 }
 
 # --- ECS Task Role ---
@@ -267,30 +153,36 @@ data "aws_iam_policy_document" "ecs_task_doc" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name_prefix        = "${var.project_name}-ecs-task-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
+  for_each = var.services
+
+  name_prefix        = "${var.project_name}-ecs-${each.key}-task-role"
+  assume_role_policy = each.value.task_role_policy
 }
 
-resource "aws_iam_role" "ecs_exec_role" {
-  name_prefix        = "${var.project_name}-ecs-exec-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_doc.json
+resource "aws_iam_role" "ecs_task_exec_role" {
+  for_each = var.services
+
+  name_prefix        = "${var.project_name}-ecs-${each.key}exec-role"
+  assume_role_policy = each.value.task_execution_role_policy
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_exec_role_policy" {
-  role       = aws_iam_role.ecs_exec_role.name
+resource "aws_iam_role_policy_attachment" "ecs_task_exec_role_policy" {
+  for_each = var.services
+
+  role       = aws_iam_role.ecs_task_exec_role[each.key].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # --- Cloud Watch Logs ---
 
 resource "aws_cloudwatch_log_group" "ecs" {
-  name              = "/ecs/${var.project_name}"
+  name              = "/ecs/${var.project_name}/${var.name}"
   retention_in_days = 7
 }
 
 # --- ECR Repository ---
 data "aws_ecr_repository" "apps" {
-  for_each = var.applications
+  for_each = var.services
   name     = each.value.aws_ecr_repository_name
 }
 
@@ -299,86 +191,22 @@ output "aws_ecr_repository_apps" {
 }
 
 # --- ECS Task Definition ---
-data "aws_ssm_parameter" "rds_instance_host" {
-  name = "/${var.project_name}/rds/postgres/rds_instance_host"
-}
-
-data "aws_ssm_parameter" "rds_instance_port" {
-  name = "/${var.project_name}/rds/postgres/rds_instance_port"
-}
-
-data "aws_ssm_parameter" "rds_instance_db_name" {
-  name = "/${var.project_name}/rds/postgres/rds_instance_db_name"
-}
-
-data "aws_ssm_parameter" "rds_instance_user" {
-  name = "/${var.project_name}/rds/postgres/rds_instance_user"
-}
-
-data "aws_ssm_parameter" "rds_instance_password" {
-  name = "/${var.project_name}/rds/postgres/rds_instance_password"
-}
-
-data "aws_ssm_parameter" "cognito_user_pool_client_id" {
-  name = "/${var.project_name}/cognito/cognito_user_pool_client_id"
-}
-
-data "aws_ssm_parameter" "cognito_app_pool_id" {
-  name = "/${var.project_name}/cognito/cognito_app_pool_id"
-}
-
-data "aws_ecr_repository" "main" {
-  name = "ecs-todo-command"
-}
 
 resource "aws_ecs_task_definition" "apps" {
-  for_each           = var.applications
+  for_each           = var.services
   family             = "${var.project_name}-${each.key}"
   task_role_arn      = aws_iam_role.ecs_task_role.arn
-  execution_role_arn = aws_iam_role.ecs_exec_role.arn
-  network_mode       = "awsvpc"
-  cpu                = 256
-  memory             = 256
+  execution_role_arn = aws_iam_role.ecs_task_exec_role.arn
+  network_mode       = each.value.network_mode
+  cpu                = each.value.cpu
+  memory             = each.value.memory
 
   container_definitions = jsonencode([{
     name         = each.value.name,
     image        = "${data.aws_ecr_repository.apps[each.key].repository_url}:${each.value.image_tag}",
     essential    = true,
     portMappings = [{ containerPort = each.value.port, hostPort = each.value.port }],
-    secrets = [
-      {
-        name      = "AWS_COGNITO_APP_CLIENT_ID"
-        valueFrom = data.aws_ssm_parameter.cognito_user_pool_client_id.arn
-      },
-      {
-        name      = "AWS_COGNITO_USER_POOL_ID"
-        valueFrom = data.aws_ssm_parameter.cognito_app_pool_id.arn
-      },
-      {
-        name      = "DATABASE_HOST"
-        valueFrom = data.aws_ssm_parameter.rds_instance_host.arn
-      },
-      {
-        name      = "DATABASE_PORT"
-        valueFrom = data.aws_ssm_parameter.rds_instance_port.arn
-      },
-      {
-        name      = "DATABASE_DB_NAME"
-        valueFrom = data.aws_ssm_parameter.rds_instance_db_name.arn
-      },
-      {
-        name      = "DATABASE_USER"
-        valueFrom = data.aws_ssm_parameter.rds_instance_user.arn
-      },
-      {
-        name      = "DATABASE_PASSWORD"
-        valueFrom = data.aws_ssm_parameter.rds_instance_password.arn
-      },
-    ]
-
-    environment = [
-      { name = "AWS_REGION_NAME", value = var.aws_region_name }
-    ]
+    environment  = each.value.environment
 
     logConfiguration = {
       logDriver = "awslogs",
@@ -394,12 +222,12 @@ resource "aws_ecs_task_definition" "apps" {
 
 # --- ECS Service ---
 resource "aws_ecs_service" "apps" {
-  for_each               = var.applications
+  for_each               = var.services
   name                   = each.value.name
   cluster                = aws_ecs_cluster.main.id
   task_definition        = aws_ecs_task_definition.apps[each.key].arn
-  desired_count          = 2
-  enable_execute_command = true
+  desired_count          = each.value.desired_count
+  enable_execute_command = each.value.enable_execute_command
 
   depends_on = [aws_lb_target_group.apps, aws_lb_listener_rule.apps]
 
@@ -411,13 +239,13 @@ resource "aws_ecs_service" "apps" {
 
   network_configuration {
     security_groups = [data.aws_security_group.ecs_task.id]
-    subnets         = var.private_subnet_ids
+    subnets         = var.services_subnet_ids
   }
 
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.main.name
-    base              = 1
-    weight            = 100
+    base              = var.default_capacity_provider_strategy_base
+    weight            = var.default_capacity_provider_strategy_weight
   }
 
   ordered_placement_strategy {
@@ -432,38 +260,15 @@ resource "aws_ecs_service" "apps" {
 
 # --- ALB ---
 
-resource "aws_security_group" "http" {
-  name_prefix = "${var.project_name}-http-sg-"
-  description = "Allow all HTTP/HTTPS traffic from public"
-  vpc_id      = var.vpc_id
-
-  dynamic "ingress" {
-    for_each = [80, 443]
-    content {
-      protocol    = "tcp"
-      from_port   = ingress.value
-      to_port     = ingress.value
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-
-  egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_lb" "main" {
   name               = "${var.project_name}-alb"
   load_balancer_type = "application"
-  subnets            = var.public_subnet_ids
-  security_groups    = [aws_security_group.http.id]
+  subnets            = var.load_balancer_subnet_ids
+  security_groups    = [var.load_balancer_security_group_id]
 }
 
 resource "aws_lb_target_group" "apps" {
-  for_each    = var.applications
+  for_each    = var.services
   name        = each.value.name
   vpc_id      = var.vpc_id
   protocol    = "HTTP"
@@ -502,7 +307,7 @@ resource "aws_lb_listener" "http" {
 # --- ALB Listeners---
 
 resource "aws_lb_listener_rule" "apps" {
-  for_each     = var.applications
+  for_each     = var.services
   listener_arn = aws_lb_listener.http.arn
 
   action {
@@ -525,16 +330,16 @@ output "alb_url" {
 # --- ECS Service Auto Scaling app 1---
 
 resource "aws_appautoscaling_target" "ecs_target" {
-  for_each           = var.applications
+  for_each           = var.services
   service_namespace  = "ecs"
   scalable_dimension = "ecs:service:DesiredCount"
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.apps[each.key].name}"
   min_capacity       = 2
-  max_capacity       = 5
+  max_capacity       = 4
 }
 
 resource "aws_appautoscaling_policy" "ecs_target_cpu" {
-  for_each           = var.applications
+  for_each           = var.services
   name               = "application-scaling-policy-cpu"
   policy_type        = "TargetTrackingScaling"
   service_namespace  = aws_appautoscaling_target.ecs_target[each.key].service_namespace
@@ -553,7 +358,7 @@ resource "aws_appautoscaling_policy" "ecs_target_cpu" {
 }
 
 resource "aws_appautoscaling_policy" "ecs_target_memory" {
-  for_each           = var.applications
+  for_each           = var.services
   name               = "application-scaling-policy-memory"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.ecs_target[each.key].resource_id

@@ -218,16 +218,66 @@ module "cognito" {
   save_to_ssm = true
 }
 
+
 module "ecs" {
   count = local.ecs_enabled ? 1 : 0
 
   source = "../../modules/ecs"
 
-  name               = "main"
-  aws_profile        = var.aws_profile
-  aws_region_name    = var.aws_region_name
-  project_name       = var.project_name
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnets_ids[*]
-  public_subnet_ids  = module.vpc.public_subnets_ids[*]
+  name                                        = "main"
+  aws_profile                                 = var.aws_profile
+  aws_region_name                             = var.aws_region_name
+  project_name                                = var.project_name
+  vpc_id                                      = module.vpc.vpc_id
+  services_subnet_ids                         = module.vpc.private_subnets_ids[*]
+  load_balancer_subnet_ids                    = module.vpc.public_subnets_ids[*]
+  vpc_security_group_ids                      = [aws_security_group.ecs_node_sg.id]
+  load_balancer_security_group_id             = [aws_security_group.load_balancer.id]
+  ec2_instance_type                           = "t2.micro"
+  autoscaling_group_min_size                  = 2
+  autoscaling_group_max_size                  = 2
+  autoscaling_group_health_check_grace_period = 0
+  autoscaling_group_health_check_type         = "EC2"
+  autoscaling_group_protect_from_scale_in     = false
+  auto_scaling_group_termination_protection   = false
+  services = {
+    auth = {
+      name                       = "auth"
+      aws_ecr_repository_name    = "ecs-todo-auth"
+      image_tag                  = "latest"
+      port                       = 80
+      path                       = "/auth/"
+      health_path                = "/auth/"
+      task_role_policy           = data.aws_iam_policy_document.ecs_access_policy_doc.json
+      task_execution_role_policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
+      network_mode               = "awsvpc"
+      cpu                        = 256
+      memory                     = 256
+      desired_count              = 2
+      enable_execute_command     = true
+      environment = [
+        { name = "AWS_REGION_NAME", value = var.aws_region_name },
+        { name = "ENVIRONMENT", value = "staging" }
+      ]
+    }
+    command = {
+      name                       = "command"
+      aws_ecr_repository_name    = "ecs-todo-command"
+      image_tag                  = "latest"
+      port                       = 80
+      path                       = "/command/"
+      health_path                = "/command/"
+      task_role_policy           = data.aws_iam_policy_document.ecs_access_policy_doc.json
+      task_execution_role_policy = data.aws_iam_policy_document.ecs_access_policy_doc.json
+      network_mode               = "awsvpc"
+      cpu                        = 256
+      memory                     = 256
+      desired_count              = 2
+      enable_execute_command     = true
+      environment = [
+        { name = "AWS_REGION_NAME", value = var.aws_region_name },
+        { name = "ENVIRONMENT", value = "staging" }
+      ]
+    }
+  }
 }
