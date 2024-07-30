@@ -194,10 +194,6 @@ data "aws_ecr_repository" "apps" {
   name     = each.value.aws_ecr_repository_name
 }
 
-output "aws_ecr_repository_apps" {
-  value = { for k, v in data.aws_ecr_repository.apps : k => v.repository_url }
-}
-
 # --- ECS Task Definition ---
 
 resource "aws_ecs_task_definition" "apps" {
@@ -328,11 +324,6 @@ resource "aws_lb_listener_rule" "apps" {
       values = ["${each.value.path}*"]
     }
   }
-}
-
-
-output "alb_url" {
-  value = aws_lb.main.dns_name
 }
 
 # --- ECS Service Auto Scaling app 1---

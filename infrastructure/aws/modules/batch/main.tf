@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws",
-      version = "5.17.0"
+      version = "~> 5.0"
     }
   }
 }
@@ -85,7 +85,7 @@ resource "aws_iam_role_policy_attachment" "batch_execution_policy" {
 }
 
 resource "aws_batch_job_definition" "main" {
-  name = "${var.project_name}-batch-job-definition"
+  name = "${var.project_name}-${var.name}-batch-job-definition"
   type = "container"
 
   platform_capabilities = ["FARGATE"]
@@ -93,6 +93,7 @@ resource "aws_batch_job_definition" "main" {
   container_properties = jsonencode({
     platform_version = "LATEST"
     image            = "${data.aws_ecr_repository.main.repository_url}:${var.image_tag}"
+    jobRoleArn       = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
     resourceRequirements = [
       {
         type  = "VCPU"
@@ -108,7 +109,7 @@ resource "aws_batch_job_definition" "main" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"         = "/aws/batch/${var.project_name}/logs"
+        "awslogs-group"         = "/aws/batch/${var.project_name}/${var.name}/logs"
         "awslogs-region"        = var.aws_region_name
         "awslogs-stream-prefix" = "batch"
       }

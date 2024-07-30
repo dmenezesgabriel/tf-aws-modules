@@ -27,7 +27,8 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
       "rds:DescribeDBInstances",
       "rds:DescribeDBClusters",
       "rds:DescribeDBSnapshots",
-      "rds:DescribeDBClusterSnapshots"
+      "rds:DescribeDBClusterSnapshots",
+      "rds:Connect"
     ]
     effect    = "Allow"
     resources = ["*"]
@@ -93,7 +94,9 @@ data "aws_iam_policy_document" "ecs_access_policy_doc" {
 
   statement {
     actions = [
-      "ecs:ExecuteCommand"
+      "ecs:ExecuteCommand",
+      "ecs:ListClusters",
+      "ecs:DeleteCluster"
     ]
     effect    = "Allow"
     resources = ["*"]

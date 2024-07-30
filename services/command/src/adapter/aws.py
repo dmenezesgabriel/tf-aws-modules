@@ -16,13 +16,21 @@ class AWSClientAdapter:
         self._aws_region_name = os.getenv("AWS_REGION_NAME")
 
         if not self.aws_endpoint_url:
+            self.__set_credentials()
+
+        self._client = self.__create_client()
+
+    def __set_credentials(self):
+        try:
             session = boto3.Session()
             credentials = session.get_credentials()
             self._aws_access_key_id = credentials.access_key
             self._aws_secret_access_key = credentials.secret_key
             self._aws_session_token = credentials.token
-
-        self._client = self.__create_client()
+            logger.info("Got credentials from boto session")
+        except Exception as error:
+            logger.error(f"Failed to get credentials from session: {error}")
+            raise
 
     def __create_client(self):
         try:

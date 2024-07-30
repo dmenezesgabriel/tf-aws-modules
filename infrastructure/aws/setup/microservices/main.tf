@@ -209,7 +209,7 @@ module "ecs" {
   load_balancer_security_group_id             = [aws_security_group.load_balancer.id]
   ec2_instance_type                           = "t2.micro"
   autoscaling_group_min_size                  = 2
-  autoscaling_group_max_size                  = 2
+  autoscaling_group_max_size                  = 4
   autoscaling_group_health_check_grace_period = 0
   autoscaling_group_health_check_type         = "EC2"
   autoscaling_group_protect_from_scale_in     = false
@@ -218,7 +218,7 @@ module "ecs" {
     auth = {
       name                       = "auth"
       aws_ecr_repository_name    = "ecs-todo-auth"
-      image_tag                  = "20240730091144"
+      image_tag                  = "20240730141203"
       port                       = 80
       path                       = "/auth/"
       health_path                = "/auth/"
@@ -237,7 +237,7 @@ module "ecs" {
     command = {
       name                       = "command"
       aws_ecr_repository_name    = "ecs-todo-command"
-      image_tag                  = "20240730091144"
+      image_tag                  = "20240730141203"
       port                       = 80
       path                       = "/command/"
       health_path                = "/command/"
@@ -260,11 +260,11 @@ module "ecs" {
 module "batch" {
   source = "../../modules/batch"
 
-  name                        = "todo-command-alambic-migration"
+  name                        = "command-alembic-migration"
   aws_profile                 = var.aws_profile
   aws_region_name             = var.aws_region_name
   project_name                = var.project_name
-  image_tag                   = "20240730091144"
+  image_tag                   = "20240730141203"
   ecs_repository_name         = "ecs-todo-command"
   command                     = ["alembic", "-c", "migrations/alembic/alembic.ini", "upgrade", "head"]
   batch_policy                = data.aws_iam_policy_document.ecs_access_policy_doc.json

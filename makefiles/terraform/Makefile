@@ -1,3 +1,6 @@
+RETRIES=100
+SLEEP_SECONDS=3
+
 CWD=$(shell pwd)
 
 tf-init-%:
@@ -9,7 +12,10 @@ tf-validate-%:
 	terraform -chdir=infrastructure/aws/setup/$* validate
 
 tf-apply-%:
-	terraform -chdir=infrastructure/aws/setup/$* apply --auto-approve
+	@set -e; \
+	for i in $$(seq 1 $(RETRIES)); do \
+		terraform -chdir=infrastructure/aws/setup/$* apply --auto-approve && break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
+	done
 
 tf-destroy-%:
 	terraform -chdir=infrastructure/aws/setup/$* destroy --auto-approve
