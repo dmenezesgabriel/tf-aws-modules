@@ -1,6 +1,10 @@
 PROJECT_NAME=todo-microservices
 AWS_ENDPOINT_URL=http://localhost:5000
 
+docker-hub-login:
+	@echo "Logging in to Docker Hub"
+	docker login registry-1.docker.io
+
 fetch-local-parameters:
 	@echo "Fetching Local SSM parameters..."
 	$(eval POSTGRES_CONTAINER_NAME := $(shell aws ssm get-parameter --name "/$(PROJECT_NAME)/rds/postgres/rds_instance_host" --query "Parameter.Value" --output text --endpoint-url=$(AWS_ENDPOINT_URL)))
@@ -19,3 +23,4 @@ create-command-migration:
 
 apply-dkr-command-migrations`:
 	docker compose run --rm command-migrations
+

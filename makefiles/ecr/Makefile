@@ -20,7 +20,7 @@ get-tag:
 	@echo "Fetching tag..."
 	@cat $(TAG_FILE)
 
-login:
+ecr-login:
 	@echo "Logging in to ECR..."
 	@set -e; \
 	for i in $$(seq 1 $(RETRIES)); do \
@@ -37,7 +37,7 @@ tag: get-tag
 	docker tag ecs-todo-auth:$(shell cat $(TAG_FILE)) $(REPO_AUTH):$(shell cat $(TAG_FILE))
 	docker tag ecs-todo-command:$(shell cat $(TAG_FILE)) $(REPO_COMMAND):$(shell cat $(TAG_FILE))
 
-push: login build tag
+push: ecr-login build tag
 	@echo "Pushing Docker images to ECR..."
 	@set -e; \
 	for i in $$(seq 1 $(RETRIES)); do \
