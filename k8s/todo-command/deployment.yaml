@@ -17,7 +17,7 @@ spec:
         - name: todo-command
           image: dmenezesgabriel/ecs-todo-command:latest
           command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: "Always" # "Always", "Never", "IfNotPresent"
           ports:
             - containerPort: 8000
               protocol: TCP

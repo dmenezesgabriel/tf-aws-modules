@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Optional
+from typing import Optional, Literal
 
 import jwt
 from fastapi import HTTPException, Request
@@ -11,9 +11,6 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 
 config = get_config()
 logger = logging.getLogger(__name__)
-
-jwks_client = jwt.PyJWKClient(config.get_parameter("AWS_COGNITO_JWK_URI"))
-
 
 class CognitoTokenUse(Enum):
     ID = "id"
@@ -122,20 +119,32 @@ class CognitoJWTAuthorizer(HTTPBearer):
             )
 
 
-aws_client = AWSClientAdapter(client_type="sts")
+class CognitoAuthorizerFactory:
+    def __init__(self):
+        self.__jwks_client = jwt.PyJWKClient(config.get_parameter("AWS_COGNITO_JWK_URI"))
+        self.__aws_client = AWSClientAdapter(client_type="sts")
 
-cognito_jwt_authorizer_access_token = CognitoJWTAuthorizer(
-    CognitoTokenUse.ACCESS,
-    aws_client.aws_region_name,
-    config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
-    config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
-    jwks_client,
-)
+    def __create_access_token_authorizer(self):
+        return CognitoJWTAuthorizer(
+            CognitoTokenUse.ACCESS,
+            aws_client.aws_region_name,
+            config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
+            config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
+            jwks_client,
+        )
 
-cognito_jwt_authorizer_access_id = CognitoJWTAuthorizer(
-    CognitoTokenUse.ID,
-    aws_client.aws_region_name,
-    config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
-    config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
-    jwks_client,
-)
+    def __create_access_id_authorizer(self):
+        return CognitoJWTAuthorizer(
+            CognitoTokenUse.ID,
+            aws_client.aws_region_name,
+            config.get_parameter("AWS_COGNITO_USER_POOL_ID"),
+            config.get_parameter("AWS_COGNITO_APP_CLIENT_ID"),
+            jwks_client,
+        )
+
+    def get(self, type: Literal["access_token", "access_id"]):
+        authorizers = {
+            "access_token": self.__create_access_token_authorizer,
+            "access_id": self.__create_access_id_authorizer
+        }
+        return authorizers[type]()

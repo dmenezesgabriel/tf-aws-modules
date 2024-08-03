@@ -78,11 +78,7 @@ kubectl --context=minikube apply -f postgres/service.yaml -n todo-app
 
 kubectl exec -it run-postgres-init-scripts-5gmrl -n todo-app -- /bin/sh
 
-kubectl --context=minikube get all -n todo-app
-kubectl --context=minikube get deployment -n todo-app
-kubectl --context=minikube get services -n todo-app
 kubectl --context=minikube get pods -n todo-app
-kubectl --context=minikube describe pod postgres-76d896f475-cgnp8 -n todo-app
 kubectl --context=minikube logs postgres-76d896f475-8n48q -n todo-app
 
 kubectl --context=minikube delete -f postgres/secret.yaml -n todo-app
@@ -95,9 +91,9 @@ kubectl --context=minikube delete -f postgres/service.yaml -n todo-app
 Run SQL files:
 
 ```sh
-kubectl apply -f postgres/job.yaml && \
-kubectl wait --for=condition=complete --timeout=5m job/run-postgres-init-scripts  -n todo-app && \
-kubectl logs $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+kubectl --context=minikube apply -f postgres/job.yaml && \
+kubectl --context=minikube wait --for=condition=complete --timeout=5m job/run-postgres-init-scripts  -n todo-app && \
+kubectl --context=minikube logs $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
 
 kubectl --context=minikube delete -f postgres/job.yaml -n todo-app
 ```
@@ -115,11 +111,33 @@ Migrations:
 ```sh
 kubectl --context=minikube apply -f todo-command/secret.yaml -n todo-app
 
-kubectl apply -f todo-command/job.yaml && \
-kubectl wait --for=condition=complete --timeout=5m job/todo-command-migrations -n todo-app && \
-kubectl logs $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+kubectl --context=minikube apply -f todo-command/job.yaml && \
+kubectl --context=minikube wait --for=condition=complete --timeout=5m job/todo-command-migrations -n todo-app && \
+kubectl --context=minikube logs $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
 
 kubectl --context=minikube get pods -n todo-app
 
+kubectl --context=minikube delete -f todo-command/secret.yaml -n todo-app
 kubectl --context=minikube delete -f todo-command/job.yaml -n todo-app
+```
+
+Application:
+
+```sh
+kubectl --context=minikube apply -f todo-command/deployment.yaml -n todo-app
+kubectl --context=minikube apply -f todo-command/service.yaml -n todo-app
+kubectl --context=minikube apply -f todo-command/node-port-service.yaml -n todo-app
+
+kubectl --context=minikube get pods -n todo-app
+kubectl --context=minikube logs todo-command-757545fb9f-k6zst  -n todo-app
+
+kubectl --context=minikube delete -f todo-command/deployment.yaml -n todo-app
+kubectl --context=minikube delete -f todo-command/service.yaml -n todo-app
+kubectl --context=minikube delete -f todo-command/node-port-service.yaml -n todo-app
+```
+
+Port Forward
+
+```sh
+kubectl port-forward service/todo-command --address 0.0.0.0 8000:8000 -n todo-app
 ```
