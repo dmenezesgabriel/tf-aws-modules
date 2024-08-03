@@ -1,0 +1,47 @@
+services:
+  todo-app:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    volumes:
+      - ./src:/app/src
+      - ./main:/app/main
+    env_file:
+      - ./.env.template
+    ports:
+      - "8000:80"
+    networks:
+      - todo-command-network
+
+  todo-migrations:
+    build: .
+    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; alembic -c migrations/alembic/alembic.ini upgrade head"
+    volumes:
+      - ./src:/app/src
+      - ./main:/app/main
+    env_file:
+      - ./.env.template
+    depends_on:
+      - postgres
+    networks:
+      - todo-command-network
+
+  postgres:
+    container_name: ${POSTGRES_CONTAINER_NAME:-postgres}
+    image: postgres:16.0-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DATABASE=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_todo_command_data:/var/lib/postgresql/data
+    networks:
+      - todo-command-network
+
+networks:
+  todo-command-network:
+    driver: bridge
+
+volumes:
+  postgres_todo_command_data:

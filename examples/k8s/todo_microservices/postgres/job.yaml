@@ -10,6 +10,7 @@ spec:
       containers:
       - name: psql
         image: postgres:16.0-alpine
+        imagePullPolicy: "IfNotPresent" # "Always", "Never", "IfNotPresent"
         envFrom:
           - secretRef:
               name: postgres

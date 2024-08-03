@@ -11,15 +11,15 @@ docker login registry-1.docker.io
 - **Build images**:
 
 ```sh
-docker build --platform=linux/amd64 -t dmenezesgabriel/ecs-todo-auth:latest ./services/auth
-docker build --platform=linux/amd64 -t dmenezesgabriel/ecs-todo-command:latest ./services/command
+docker build --platform=linux/amd64 -t dmenezesgabriel/cognito-api:latest ./../../../examples/images/cognito_api
+docker build --platform=linux/amd64 -t dmenezesgabriel/todo-command:latest ./../../../examples/images/todo_command
 ```
 
 - **Push images**:
 
 ```sh
-docker push dmenezesgabriel/ecs-todo-auth:latest
-docker push dmenezesgabriel/ecs-todo-command:latest
+docker push dmenezesgabriel/cognito-api:latest
+docker push dmenezesgabriel/todo-command:latest
 ```
 
 ## Minikube
@@ -54,6 +54,8 @@ kubectl --context=minikube apply -f cluster/components.yaml
 kubectl --context=minikube get deployment metrics-server -n kube-system
 
 kubectl --context=minikube top node
+
+kubectl --context=minikube delete -f cluster/components.yaml
 ```
 
 - **Namespace**:
@@ -62,25 +64,30 @@ kubectl --context=minikube top node
 kubectl --context=minikube apply -f namespace/namespace.yaml
 
 kubectl --context=minikube get namespaces
+
+kubectl --context=minikube delete -f namespace/namespace.yaml
 ```
 
 - **PostgreSQL**:
 
 ```sh
 kubectl --context=minikube apply -k postgres -n todo-app
-kubectl get configmap postgres-init-scripts -n todo-app -o yaml
-
 kubectl --context=minikube apply -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/pvc.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/service.yaml -n todo-app
 
+kubectl --context=minikube get configmaps -n todo-app
+kubectl --context=minikube get configmap postgres-init-scripts -n todo-app -o yaml
+
+kubectl describe pod run-postgres-init-scripts-7nw56 -n todo-app
 kubectl exec -it run-postgres-init-scripts-5gmrl -n todo-app -- /bin/sh
 
 kubectl --context=minikube get pods -n todo-app
 kubectl --context=minikube logs postgres-76d896f475-8n48q -n todo-app
 
+kubectl --context=minikube delete -k postgres -n todo-app
 kubectl --context=minikube delete -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pvc.yaml -n todo-app
@@ -109,31 +116,31 @@ kubectl port-forward svc/postgres 5432:5432 -n todo-app
 Migrations:
 
 ```sh
-kubectl --context=minikube apply -f todo-command/secret.yaml -n todo-app
+kubectl --context=minikube apply -f todo_command/secret.yaml -n todo-app
 
-kubectl --context=minikube apply -f todo-command/job.yaml && \
+kubectl --context=minikube apply -f todo_command/job.yaml && \
 kubectl --context=minikube wait --for=condition=complete --timeout=5m job/todo-command-migrations -n todo-app && \
 kubectl --context=minikube logs $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
 
 kubectl --context=minikube get pods -n todo-app
 
-kubectl --context=minikube delete -f todo-command/secret.yaml -n todo-app
-kubectl --context=minikube delete -f todo-command/job.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/secret.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/job.yaml -n todo-app
 ```
 
 Application:
 
 ```sh
-kubectl --context=minikube apply -f todo-command/deployment.yaml -n todo-app
-kubectl --context=minikube apply -f todo-command/service.yaml -n todo-app
-kubectl --context=minikube apply -f todo-command/node-port-service.yaml -n todo-app
+kubectl --context=minikube apply -f todo_command/deployment.yaml -n todo-app
+kubectl --context=minikube apply -f todo_command/service.yaml -n todo-app
+kubectl --context=minikube apply -f todo_command/node-port-service.yaml -n todo-app
 
 kubectl --context=minikube get pods -n todo-app
 kubectl --context=minikube logs todo-command-757545fb9f-k6zst  -n todo-app
 
-kubectl --context=minikube delete -f todo-command/deployment.yaml -n todo-app
-kubectl --context=minikube delete -f todo-command/service.yaml -n todo-app
-kubectl --context=minikube delete -f todo-command/node-port-service.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/deployment.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/service.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/node-port-service.yaml -n todo-app
 ```
 
 Port Forward
