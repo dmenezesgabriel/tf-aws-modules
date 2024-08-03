@@ -2,7 +2,7 @@
 PROJECT_NAME = todo-microservices
 
 # SSM Parameter Store
-aws ssm put-parameter --name "/$(PROJECT_NAME)/cognito/cognito_app_client_id" --value "test" --type String --region us-east-1 --endpoint-url http://localhost:4566
+aws ssm put-parameter --name "/$(PROJECT_NAME)/cognito/cognito_user_pool_client_id" --value "test" --type String --region us-east-1 --endpoint-url http://localhost:4566
 aws ssm put-parameter --name "/$(PROJECT_NAME)/cognito/cognito_app_pool_id" --value "test" --type String --region us-east-1 --endpoint-url http://localhost:4566
 aws ssm put-parameter --name "/$(PROJECT_NAME)/documentdb/documentdb_user" --value "mongo" --type String --region us-east-1 --endpoint-url http://localhost:4566
 aws ssm put-parameter --name "/$(PROJECT_NAME)/documentdb/documentdb_password" --value "mongo" --type String --region us-east-1 --endpoint-url http://localhost:4566

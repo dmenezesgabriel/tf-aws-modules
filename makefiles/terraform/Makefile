@@ -1,21 +1,27 @@
+RETRIES=100
+SLEEP_SECONDS=3
+
 CWD=$(shell pwd)
 
 tf-init-%:
 	@echo "Initializing Terraform $*"
-	terraform -chdir=infrastructure/aws/$* init
+	terraform -chdir=infrastructure/aws/setup/$* init
 
 tf-validate-%:
 	@echo "Validating Terraform $*"
-	terraform -chdir=infrastructure/aws/$* validate
+	terraform -chdir=infrastructure/aws/setup/$* validate
 
 tf-apply-%:
-	terraform -chdir=infrastructure/aws/$* apply --auto-approve
+	@set -e; \
+	for i in $$(seq 1 $(RETRIES)); do \
+		terraform -chdir=infrastructure/aws/setup/$* apply --auto-approve && break || (echo "Retry $$i/$$(($(RETRIES))) failed. Retrying after $(SLEEP_SECONDS) seconds..."; sleep $(SLEEP_SECONDS)); \
+	done
 
 tf-destroy-%:
-	terraform -chdir=infrastructure/aws/$* destroy --auto-approve
+	terraform -chdir=infrastructure/aws/setup/$* destroy --auto-approve
 
 tf-output-%:
-	terraform -chdir=infrastructure/aws/$* output
+	terraform -chdir=infrastructure/aws/setup/$* output
 
 tfmoto-before-%:
 	cp infrastructure/moto/override.tf infrastructure/aws/$*/main_override.tf
@@ -25,27 +31,27 @@ tfmoto-teardown-%:
 
 tfmoto-init-%:
 	@echo "Initializing Terraform $*"
-	terraform -chdir=infrastructure/aws/$* init \
+	terraform -chdir=infrastructure/aws/setup/$* init \
 
 tfmoto-validate-%:
 	@echo "Validating Terraform $*"
-	terraform -chdir=infrastructure/aws/$* validate \
+	terraform -chdir=infrastructure/aws/setup/$* validate \
 
 tfmoto-apply-%:
 	@echo "Applying Terraform $*"
-	terraform -chdir=infrastructure/aws/$* apply --auto-approve \
+	terraform -chdir=infrastructure/aws/setup/$* apply --auto-approve \
 	-state=$(CWD)/tfmoto/$*/.terraform.tfstate \
 	-state-out=$(CWD)/tfmoto/$*/.terraform.tfstate \
 	-backup=-
 
 tfmoto-destroy-%:
-	terraform -chdir=infrastructure/aws/$* destroy --auto-approve \
+	terraform -chdir=infrastructure/aws/setup/$* destroy --auto-approve \
 	-state=$(CWD)/tfmoto/$*/.terraform.tfstate \
 	-state-out=$(CWD)/tfmoto/$*/.terraform.tfstate \
 	-backup=-
 
 tfmoto-output-%:
-	terraform -chdir=infrastructure/aws/$* output \
+	terraform -chdir=infrastructure/aws/setup/$* output \
 	-state=$(CWD)/tfmoto/$*/.terraform.tfstate \
 
 

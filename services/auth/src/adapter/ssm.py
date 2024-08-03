@@ -11,8 +11,8 @@ logger = logging.getLogger()
 
 class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStoreInterface):
     PARAMETER_MAPPING = {
-        "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/cognito_app_pool_id",
-        "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/cognito_app_client_id",
+        "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/main/cognito_app_pool_id",
+        "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/main/cognito_user_pool_client_id",
     }
 
     def __init__(self, client_type="ssm"):
