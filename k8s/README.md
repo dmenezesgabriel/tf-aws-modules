@@ -95,13 +95,9 @@ kubectl --context=minikube delete -f postgres/service.yaml -n todo-app
 Run SQL files:
 
 ```sh
-kubectl apply -f postgres/job.yaml && kubectl logs -f $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
-
-# or
-
-kubectl --context=minikube apply -f postgres/job.yaml
-kubectl --context=minikube get pods -n todo-app
-kubectl --context=minikube logs run-postgres-init-scripts-knf6l -n todo-app
+kubectl apply -f postgres/job.yaml && \
+kubectl wait --for=condition=complete --timeout=5m job/run-postgres-init-scripts  -n todo-app && \
+kubectl logs $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
 
 kubectl --context=minikube delete -f postgres/job.yaml -n todo-app
 ```
@@ -118,12 +114,12 @@ Migrations:
 
 ```sh
 kubectl --context=minikube apply -f todo-command/secret.yaml -n todo-app
-kubectl apply -f todo-command/job.yaml && kubectl logs -f $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+
+kubectl apply -f todo-command/job.yaml && \
+kubectl wait --for=condition=complete --timeout=5m job/todo-command-migrations -n todo-app && \
+kubectl logs $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
 
 kubectl --context=minikube get pods -n todo-app
 
-
 kubectl --context=minikube delete -f todo-command/job.yaml -n todo-app
-
-
 ```
