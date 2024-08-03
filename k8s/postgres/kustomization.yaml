@@ -5,6 +5,6 @@ resources:
   - deployment.yaml
 
 configMapGenerator:
-  - name: postgres-init-db
+  - name: postgres-init-scripts
     files:
       - migrations/databases.sql

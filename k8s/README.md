@@ -76,18 +76,34 @@ kubectl --context=minikube apply -f postgres/pvc.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/service.yaml -n todo-app
 
+kubectl exec -it run-postgres-init-scripts-5gmrl -n todo-app -- /bin/sh
+
 kubectl --context=minikube get all -n todo-app
 kubectl --context=minikube get deployment -n todo-app
 kubectl --context=minikube get services -n todo-app
 kubectl --context=minikube get pods -n todo-app
 kubectl --context=minikube describe pod postgres-76d896f475-cgnp8 -n todo-app
-kubectl --context=minikube logs postgres-76d896f475-cgnp8 -n todo-app
+kubectl --context=minikube logs postgres-76d896f475-8n48q -n todo-app
 
 kubectl --context=minikube delete -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pvc.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/deployment.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/service.yaml -n todo-app
+```
+
+Run SQL files:
+
+```sh
+kubectl apply -f postgres/job.yaml && kubectl logs -f $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+
+# or
+
+kubectl --context=minikube apply -f postgres/job.yaml
+kubectl --context=minikube get pods -n todo-app
+kubectl --context=minikube logs run-postgres-init-scripts-knf6l -n todo-app
+
+kubectl --context=minikube delete -f postgres/job.yaml -n todo-app
 ```
 
 Port Forward:
