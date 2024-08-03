@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-command
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-command
+  template:
+    metadata:
+      labels:
+        app: todo-command
+        role: service
+    spec:
+      containers:
+        - name: todo-command
+          image: dmenezesgabriel/ecs-todo-command:latest
+          command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              port: 8000
+              path: /docs
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /docs
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "0.5"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          envFrom:
+            - secretRef:
+                name: todo-command

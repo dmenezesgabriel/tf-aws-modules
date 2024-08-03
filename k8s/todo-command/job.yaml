@@ -1,0 +1,19 @@
+# job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: todo-command-migrations
+  namespace: todo-app
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+      - name: migration-container
+        image: dmenezesgabriel/ecs-todo-command:latest
+        command: [ "alembic","-c","migrations/alembic/alembic.ini", "upgrade", "head" ]
+        envFrom:
+          - secretRef:
+              name: todo-command
+      restartPolicy: OnFailure
+  backoffLimit: 15

@@ -111,3 +111,19 @@ Port Forward:
 ```sh
 kubectl port-forward svc/postgres 5432:5432 -n todo-app
 ```
+
+- **Todo Command**:
+
+Migrations:
+
+```sh
+kubectl --context=minikube apply -f todo-command/secret.yaml -n todo-app
+kubectl apply -f todo-command/job.yaml && kubectl logs -f $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+
+kubectl --context=minikube get pods -n todo-app
+
+
+kubectl --context=minikube delete -f todo-command/job.yaml -n todo-app
+
+
+```
