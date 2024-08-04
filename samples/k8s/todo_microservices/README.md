@@ -1,5 +1,20 @@
 # K8s
 
+## Requirements
+
+- Docker
+- Minikube
+- Kubectl
+- [Istio.io](https://istio.io/latest/docs/setup/getting-started/#download)
+
+## Istio
+
+```sh
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-<version>
+cd bin
+./istioctl install --set profile=default -y
+```
 ## Docker
 
 - **Login to DockerHub**:
@@ -59,7 +74,7 @@ kubectl --context=minikube get services -n todo-app # see clusterIP
 
 ### Apply manifests
 
-- **Enable metrics on cluster**:
+#### Enable metrics server
 
 ```sh
 kubectl --context=minikube apply -f cluster/components.yaml
@@ -71,7 +86,7 @@ kubectl --context=minikube top node
 kubectl --context=minikube delete -f cluster/components.yaml
 ```
 
-- **Namespace**:
+#### Namespace
 
 ```sh
 kubectl --context=minikube apply -f namespace/namespace.yaml
@@ -81,7 +96,25 @@ kubectl --context=minikube get namespaces
 kubectl --context=minikube delete -f namespace/namespace.yaml
 ```
 
-- **PostgreSQL**:
+
+#### Istio
+
+```sh
+kubectl label namespace todo-app istio-injection=enabled
+```
+
+Gateway
+
+```sh
+kubectl --context=minikube apply -f gateway/gateway.yaml -n todo-app
+kubectl --context=minikube apply -f gateway/gateway-virtual-service.yaml -n todo-app
+
+kubectl --context=minikube delete -f gateway/gateway.yaml -n todo-app
+kubectl --context=minikube delete -f gateway/gateway-virtual-service.yaml -n todo-app
+```
+
+
+#### PostgreSQL
 
 ```sh
 kubectl --context=minikube apply -f postgres/secret.yaml -n todo-app
@@ -113,7 +146,7 @@ Port Forward:
 kubectl port-forward svc/postgres 5432:5432 -n todo-app
 ```
 
-- **Todo Command**:
+#### Todo Command
 
 Migrations:
 
@@ -131,10 +164,12 @@ Application:
 kubectl --context=minikube apply -f todo_command/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f todo_command/service.yaml -n todo-app
 kubectl --context=minikube apply -f todo_command/node-port-service.yaml -n todo-app
+kubectl --context=minikube apply -f todo_command/virtual-service.yaml -n todo-app
 
 kubectl --context=minikube delete -f todo_command/deployment.yaml -n todo-app
 kubectl --context=minikube delete -f todo_command/service.yaml -n todo-app
 kubectl --context=minikube delete -f todo_command/node-port-service.yaml -n todo-app
+kubectl --context=minikube delete -f todo_command/virtual-service.yaml -n todo-app
 ```
 
 Port Forward
