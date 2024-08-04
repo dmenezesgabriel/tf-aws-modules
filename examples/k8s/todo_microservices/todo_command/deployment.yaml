@@ -24,12 +24,12 @@ spec:
           readinessProbe:
             httpGet:
               port: 8000
-              path: /docs
+              path: /command/docs
             initialDelaySeconds: 15
           livenessProbe:
             httpGet:
               port: 8000
-              path: /docs
+              path: /command/docs
             initialDelaySeconds: 15
             periodSeconds: 15
           resources:

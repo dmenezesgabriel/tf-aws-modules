@@ -48,12 +48,13 @@ kubectl get all
 
 ```sh
 kubectl --context=minikube get pods -n todo-app
+kubectl --context=minikube logs <pod_name> -n todo-app
 
-kubectl describe pod <pod_name> -n todo-app # Check events
-kubectl exec -it <pod_name> -n todo-app -- /bin/sh
+kubectl --context=minikube describe pod <pod_name> -n todo-app # Check events
+kubectl --context=minikube exec -it <pod_name> -n todo-app -- /bin/sh
 
-kubectl get endpoints <pod_name> -n todo-app
-kubectl get services -n todo-app # see clusterIP
+kubectl --context=minikube get endpoints <pod_name> -n todo-app
+kubectl --context=minikube get services -n todo-app # see clusterIP
 ```
 
 ### Apply manifests
@@ -100,9 +101,8 @@ Run SQL files:
 
 ```sh
 kubectl --context=minikube kustomize postgres -n todo-app
-kubectl --context=minikube apply -k postgres -n todo-app
 
-kubectl --context=minikube get configmaps -n todo-app
+kubectl --context=minikube apply -k postgres -n todo-app
 
 kubectl --context=minikube delete -k postgres -n todo-app
 ```
@@ -119,12 +119,7 @@ Migrations:
 
 ```sh
 kubectl --context=minikube apply -f todo_command/secret.yaml -n todo-app
-
-kubectl --context=minikube apply -f todo_command/job.yaml && \
-kubectl --context=minikube wait --for=condition=complete --timeout=5m job/todo-command-migrations -n todo-app && \
-kubectl --context=minikube logs $(kubectl get pods -n todo-app --selector=job-name=todo-command-migrations -o=jsonpath='{.items[0].metadata.name}') -n todo-app
-
-kubectl --context=minikube get pods -n todo-app
+kubectl --context=minikube apply -f todo_command/job.yaml
 
 kubectl --context=minikube delete -f todo_command/secret.yaml -n todo-app
 kubectl --context=minikube delete -f todo_command/job.yaml -n todo-app
@@ -136,9 +131,6 @@ Application:
 kubectl --context=minikube apply -f todo_command/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f todo_command/service.yaml -n todo-app
 kubectl --context=minikube apply -f todo_command/node-port-service.yaml -n todo-app
-
-kubectl --context=minikube get pods -n todo-app
-kubectl --context=minikube logs todo-command-757545fb9f-k6zst  -n todo-app
 
 kubectl --context=minikube delete -f todo_command/deployment.yaml -n todo-app
 kubectl --context=minikube delete -f todo_command/service.yaml -n todo-app
