@@ -44,6 +44,18 @@ minikube stop
 kubectl get all
 ```
 
+- **Debug**:
+
+```sh
+kubectl --context=minikube get pods -n todo-app
+
+kubectl describe pod <pod_name> -n todo-app # Check events
+kubectl exec -it <pod_name> -n todo-app -- /bin/sh
+
+kubectl get endpoints <pod_name> -n todo-app
+kubectl get services -n todo-app # see clusterIP
+```
+
 ### Apply manifests
 
 - **Enable metrics on cluster**:
@@ -71,23 +83,12 @@ kubectl --context=minikube delete -f namespace/namespace.yaml
 - **PostgreSQL**:
 
 ```sh
-kubectl --context=minikube apply -k postgres -n todo-app
 kubectl --context=minikube apply -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/pvc.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/service.yaml -n todo-app
 
-kubectl --context=minikube get configmaps -n todo-app
-kubectl --context=minikube get configmap postgres-init-scripts -n todo-app -o yaml
-
-kubectl describe pod run-postgres-init-scripts-7nw56 -n todo-app
-kubectl exec -it run-postgres-init-scripts-5gmrl -n todo-app -- /bin/sh
-
-kubectl --context=minikube get pods -n todo-app
-kubectl --context=minikube logs postgres-76d896f475-8n48q -n todo-app
-
-kubectl --context=minikube delete -k postgres -n todo-app
 kubectl --context=minikube delete -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pvc.yaml -n todo-app
@@ -98,11 +99,12 @@ kubectl --context=minikube delete -f postgres/service.yaml -n todo-app
 Run SQL files:
 
 ```sh
-kubectl --context=minikube apply -f postgres/job.yaml && \
-kubectl --context=minikube wait --for=condition=complete --timeout=5m job/run-postgres-init-scripts  -n todo-app && \
-kubectl --context=minikube logs $(kubectl get pods -n todo-app --selector=job-name=run-postgres-init-scripts -o=jsonpath='{.items[0].metadata.name}') -n todo-app
+kubectl --context=minikube kustomize postgres -n todo-app
+kubectl --context=minikube apply -k postgres -n todo-app
 
-kubectl --context=minikube delete -f postgres/job.yaml -n todo-app
+kubectl --context=minikube get configmaps -n todo-app
+
+kubectl --context=minikube delete -k postgres -n todo-app
 ```
 
 Port Forward:

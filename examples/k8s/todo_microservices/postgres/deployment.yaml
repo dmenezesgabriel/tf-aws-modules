@@ -7,6 +7,7 @@ spec:
   selector:
     matchLabels:
       app: postgres
+      role: service
   template:
     metadata:
       labels:
@@ -23,7 +24,6 @@ spec:
           ports:
             - containerPort: 5432
               name: postgres
-              protocol: TCP
           volumeMounts:
             - name: postgres
               mountPath: /var/lib/postgresql/data
