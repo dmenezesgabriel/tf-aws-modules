@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
       - name: migration-container
-        image: dmenezesgabriel/ecs-todo-command:latest
+        image: dmenezesgabriel/todo-command:latest
         command: [ "alembic","-c","migrations/alembic/alembic.ini", "upgrade", "head" ]
         imagePullPolicy: "Always" # "Always", "Never", "IfNotPresent"
         envFrom:

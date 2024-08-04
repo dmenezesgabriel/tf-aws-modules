@@ -3,16 +3,19 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: run-postgres-init-scripts
-  namespace: todo-app
 spec:
   template:
     spec:
       containers:
       - name: psql
         image: postgres:16.0-alpine
+        imagePullPolicy: "IfNotPresent" # "Always", "Never", "IfNotPresent"
         envFrom:
           - secretRef:
               name: postgres
+        # kubectl exec it <pod_name> -- /bin/sh -n todo-app
+        # command: ["/bin/sh"]
+        # args: ["-c", "sleep 3600"]
         command: ["sh", "-c"]
         args:
           - |
