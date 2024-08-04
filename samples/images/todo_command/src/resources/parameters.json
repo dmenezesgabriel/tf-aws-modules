@@ -1,0 +1,29 @@
+{
+  "environment": {
+    "AWS_COGNITO_USER_POOL_ID": "AWS_COGNITO_USER_POOL_ID",
+    "AWS_COGNITO_APP_CLIENT_ID": "AWS_COGNITO_APP_CLIENT_ID",
+    "AWS_COGNITO_JWK_URI": "AWS_COGNITO_JWK_URI",
+    "AWS_COGNITO_ISSUER_URI": "AWS_COGNITO_ISSUER_URI",
+    "DATABASE_DB_NAME": "DATABASE_DB_NAME",
+    "DATABASE_USER": "DATABASE_USER",
+    "DATABASE_PASSWORD": "DATABASE_PASSWORD",
+    "DATABASE_PORT": "DATABASE_PORT",
+    "DATABASE_HOST": "DATABASE_HOST",
+    "RABBITMQ_HOST": "RABBITMQ_HOST",
+    "RABBITMQ_DEFAULT_USER": "RABBITMQ_DEFAULT_USER",
+    "RABBITMQ_DEFAULT_PASS": "RABBITMQ_DEFAULT_PASS",
+    "RABBITMQ_DEFAULT_PORT": "RABBITMQ_DEFAULT_PORT",
+    "TODO_QUEUE": "TODO_QUEUE"
+  },
+  "ssm": {
+    "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/main/cognito_app_pool_id",
+    "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/main/cognito_user_pool_client_id",
+    "AWS_COGNITO_JWK_URI": "/todo-microservices/cognito/main/cognito_jwk_uri",
+    "AWS_COGNITO_ISSUER_URI": "/todo-microservices/cognito/main/cognito_issuer_uri",
+    "DATABASE_DB_NAME": "/todo-microservices/rds/main/rds_instance_db_name",
+    "DATABASE_USER": "/todo-microservices/rds/main/rds_instance_user",
+    "DATABASE_PASSWORD": "/todo-microservices/rds/main/rds_instance_password",
+    "DATABASE_PORT": "/todo-microservices/rds/main/rds_instance_port",
+    "DATABASE_HOST": "/todo-microservices/rds/main/rds_instance_host"
+  }
+}

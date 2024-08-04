@@ -14,15 +14,17 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.orm import sessionmaker
+
 from src.config import get_config
 from src.domain.entities.todo import Todo
+from src.ports.todo_repository import TodoRepository
 
 config = get_config()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class PostgresTodoAdapter:
+class PostgresTodoAdapter(TodoRepository):
     def __init__(self):
         self.__engine = create_engine(self.database_url)
         self._metadata = MetaData()
@@ -30,7 +32,7 @@ class PostgresTodoAdapter:
             "todos",
             self.metadata,
             Column("id", UUID, primary_key=True, index=True),
-            Column("title", String, index=True),
+            Column("title", String, index=True, unique=True),
             Column("description", String),
             Column("done", Boolean),
         )

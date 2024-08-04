@@ -2,26 +2,16 @@ import logging
 from typing import Optional
 
 from botocore.exceptions import ClientError  # type: ignore
-from src.adapter.aws import AWSClientAdapter
-from src.adapter.exceptions import ParameterNotFound, ParameterStoreException
-from src.port.parameter_store import ParameterStoreInterface
+
+from src.adapters.cloud.aws.client import AWSClientAdapter
+from src.adapters.exceptions import ParameterNotFound, ParameterStoreException
+from src.ports.parameter_store import ParameterStoreInterface
+from src.utils.resources import Resource
 
 logger = logging.getLogger()
 
 
 class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStoreInterface):
-    PARAMETER_MAPPING = {
-        "AWS_COGNITO_USER_POOL_ID": "/todo-microservices/cognito/main/cognito_app_pool_id",
-        "AWS_COGNITO_APP_CLIENT_ID": "/todo-microservices/cognito/main/cognito_user_pool_client_id",
-        "AWS_COGNITO_JWK_URI": "/todo-microservices/cognito/main/cognito_jwk_uri",
-        "AWS_COGNITO_ISSUER_URI": "/todo-microservices/cognito/main/cognito_issuer_uri",
-        "DATABASE_DB_NAME": "/todo-microservices/rds/main/rds_instance_db_name",
-        "DATABASE_USER": "/todo-microservices/rds/main/rds_instance_user",
-        "DATABASE_PASSWORD": "/todo-microservices/rds/main/rds_instance_password",
-        "DATABASE_PORT": "/todo-microservices/rds/main/rds_instance_port",
-        "DATABASE_HOST": "/todo-microservices/rds/main/rds_instance_host",
-    }
-
     def __init__(self, client_type="ssm"):
         super().__init__(client_type=client_type)
         logger.info("Initialized SSM parameter store")
@@ -49,4 +39,6 @@ class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStoreInterface):
             )
 
     def get_parameter(self, name: str) -> Optional[str]:
-        return self.__get_parameter(self.PARAMETER_MAPPING[name])
+        resource = Resource()
+        parameters = resource.load_json("parameters.json")
+        return self.__get_parameter(parameters["ssm"][name])

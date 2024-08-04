@@ -100,7 +100,9 @@ kubectl --context=minikube delete -f namespace/namespace.yaml
 #### Istio
 
 ```sh
+kubectl get pod -n istio-system
 kubectl label namespace todo-app istio-injection=enabled
+kubectl get ns todo-app --show-labels
 ```
 
 Gateway
@@ -108,11 +110,14 @@ Gateway
 ```sh
 kubectl --context=minikube apply -f gateway/gateway.yaml -n todo-app
 kubectl --context=minikube apply -f gateway/gateway-virtual-service.yaml -n todo-app
+kubectl annotate gateway todo-app-gateway networking.istio.io/service-type=ClusterIP --namespace=todo-app
+
+kubectl get pods --namespace=istio-system
+kubectl port-forward gateway/todo-app-gateway 8080:80 -n todo-app
 
 kubectl --context=minikube delete -f gateway/gateway.yaml -n todo-app
 kubectl --context=minikube delete -f gateway/gateway-virtual-service.yaml -n todo-app
 ```
-
 
 #### PostgreSQL
 
@@ -122,6 +127,8 @@ kubectl --context=minikube apply -f postgres/pv.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/pvc.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/deployment.yaml -n todo-app
 kubectl --context=minikube apply -f postgres/service.yaml -n todo-app
+
+kubectl get logs svc/posgtres -n todo-app
 
 kubectl --context=minikube delete -f postgres/secret.yaml -n todo-app
 kubectl --context=minikube delete -f postgres/pv.yaml -n todo-app
@@ -136,6 +143,8 @@ Run SQL files:
 kubectl --context=minikube kustomize postgres -n todo-app
 
 kubectl --context=minikube apply -k postgres -n todo-app
+
+kubectl logs job/run-postgres-init-scripts -n todo-app
 
 kubectl --context=minikube delete -k postgres -n todo-app
 ```

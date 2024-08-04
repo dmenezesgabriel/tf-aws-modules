@@ -2,7 +2,8 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from src.adapter.postgres import PostgresTodoAdapter
+
+from src.adapters.database.postgres.todo import PostgresTodoAdapter
 from src.config import get_config
 
 app_config = get_config()

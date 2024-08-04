@@ -1,14 +1,17 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from src.adapter.cognito_authorizer import CognitoAuthorizerFactory
-from src.adapter.dto import (
+
+from src.adapters.dto import (
     TodoCreateRequestDTO,
     TodoResponseDTO,
     TodoUpdateRequestDTO,
 )
+from src.adapters.http.fastapi.cognito_authorizer import (
+    CognitoAuthorizerFactory,
+)
 from src.config import get_config
-from src.domain.services import TodoService
+from src.domain.services.todo import TodoService
 
 config = get_config()
 logger = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ class HTTPApiAdapter:
     def __init__(self, todo_service: TodoService) -> None:
         self.dependencies = (
             [Depends(CognitoAuthorizerFactory().get("access_token"))]
-            if config.ENVIRONMENT not in ["local", "development"]
+            if config.ENVIRONMENT == "production"
             else None
         )
         self.__todo_service = todo_service

@@ -10,9 +10,7 @@ spec:
   http:
   - match:
     - uri:
-        prefix: "/command/"
-    rewrite:
-      uri: "/"
+        prefix: /command
     route:
     - destination:
         host: todo-command

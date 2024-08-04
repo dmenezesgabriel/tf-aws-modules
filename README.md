@@ -104,3 +104,5 @@ mongosh --host endpoint:27017 --username username --password password
 - [terraform-modules-101-create-version-and-publish-on-github](https://medium.com/nerd-for-tech/terraform-modules-101-create-version-and-publish-on-github-4455f3673559#f790)
 - [ecs-fargate-with-alb-deployment-using-terraform](https://medium.com/the-cloud-journal/ecs-fargate-with-alb-deployment-using-terraform-part-2-5547408be49a)
 - [generate-configmap-using-kustomization-but-the-name-in-configmapref-doesnt](https://stackoverflow.com/questions/77606656/generate-configmap-using-kustomization-but-the-name-in-configmapref-doesnt-i)
+- [celery-rabbitmq-fastapi-docker](https://blog.devops.dev/celery-rabbitmq-fastapi-docker-842d2b485d33)
+- [scaling-celery-rabbitmq-kubernetes](https://learnk8s.io/scaling-celery-rabbitmq-kubernetes)

@@ -1,27 +1,15 @@
 services:
-  todo-app:
+  app:
     build: .
     command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     volumes:
+      - ./migrations:/app/migrations
       - ./src:/app/src
-      - ./main:/app/main
+      - ./main.py:/app/main.py
     env_file:
       - ./.env.template
     ports:
       - "8000:80"
-    networks:
-      - todo-command-network
-
-  todo-migrations:
-    build: .
-    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; alembic -c migrations/alembic/alembic.ini upgrade head"
-    volumes:
-      - ./src:/app/src
-      - ./main:/app/main
-    env_file:
-      - ./.env.template
-    depends_on:
-      - postgres
     networks:
       - todo-command-network
 
@@ -36,6 +24,17 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres_todo_command_data:/var/lib/postgresql/data
+    networks:
+      - todo-command-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
     networks:
       - todo-command-network
 

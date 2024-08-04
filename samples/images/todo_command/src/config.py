@@ -12,7 +12,7 @@ class Config(metaclass=Singleton):
     LOG_LEVEL = "DEBUG"
     APP_PATH = "/command"
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.environment",
+        "path": "src.adapters.parameters.environment",
         "class_name": "EnvironmentParameterStoreAdapter",
     }
 
@@ -23,7 +23,7 @@ class Config(metaclass=Singleton):
     def __configure_logging(self):
         LOGGING = {
             "version": 1,
-            "disable_existing_loggers": True,
+            "disable_existing_loggers": False,
             "formatters": {
                 "standard": {
                     "format": (
@@ -45,7 +45,7 @@ class Config(metaclass=Singleton):
                     "level": self.LOG_LEVEL,
                     "handlers": ["stdout_logger"],
                     "propagate": False,
-                }
+                },
             },
         }
         logging.config.dictConfig(LOGGING)
@@ -62,7 +62,7 @@ class Config(metaclass=Singleton):
 
 
 class LocalConfig(Config):
-    pass
+    LOG_LEVEL = "INFO"
 
 
 class TestConfig(Config):
@@ -71,14 +71,14 @@ class TestConfig(Config):
 
 class DevelopmentConfig(Config):
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapters.parameters.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 
 
 class StagingConfig(Config):
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapters.parameters.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 
@@ -86,7 +86,7 @@ class StagingConfig(Config):
 class ProductionConfig(Config):
     LOG_LEVEL = "INFO"
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapters.parameters.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 
