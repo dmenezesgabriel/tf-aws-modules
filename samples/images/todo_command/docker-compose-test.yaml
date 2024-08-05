@@ -1,0 +1,20 @@
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app/
+    command: |
+      python -m pytest tests -s -vv -x --cov --cov-report=html:/app/reports/coverage --alluredir /app/allure-results
+    env_file:
+      - .env.test.template
+
+  allure:
+    build:
+      context: .
+      dockerfile: Dockerfile.allure
+    volumes:
+      - .:/app/
+    ports:
+      - "35741:35741"

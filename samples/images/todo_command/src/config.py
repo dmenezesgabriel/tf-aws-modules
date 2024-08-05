@@ -1,61 +1,39 @@
-import importlib
 import logging
 import logging.config
 import os
 from typing import Optional
 
+from src.utils.module import Module, Modules
+from src.utils.resources import Resource
 from src.utils.singleton import Singleton
+
+logger = logging.getLogger()
 
 
 class Config(metaclass=Singleton):
     ENVIRONMENT = os.getenv("ENVIRONMENT")
     LOG_LEVEL = "DEBUG"
     APP_PATH = "/command"
-    PARAMETER_STORE_MODULE = {
-        "path": "src.adapters.parameters.environment",
-        "class_name": "EnvironmentParameterStoreAdapter",
-    }
+    PARAMETER_STORE_MODULE = os.getenv(
+        "PARAMETER_STORE_MODULE", Module.ENVIRONMENT_PARAMETER_STORE
+    )
 
     def __init__(self):
         self.__configure_logging()
         self.__parameter_store_adapter = self.__load_parameter_store()
 
     def __configure_logging(self):
-        LOGGING = {
-            "version": 1,
-            "disable_existing_loggers": False,
-            "formatters": {
-                "standard": {
-                    "format": (
-                        "[%(asctime)s] %(levelname)s "
-                        "[%(filename)s.%(funcName)s:%(lineno)d] "
-                        "%(message)s"
-                    ),
-                    "datefmt": "%Y-%m-%d %H:%M:%S",
-                }
-            },
-            "handlers": {
-                "stdout_logger": {
-                    "formatter": "standard",
-                    "class": "logging.StreamHandler",
-                }
-            },
-            "loggers": {
-                "": {  # root
-                    "level": self.LOG_LEVEL,
-                    "handlers": ["stdout_logger"],
-                    "propagate": False,
-                },
-            },
-        }
-        logging.config.dictConfig(LOGGING)
+        logger_config = Resource.load_json("logger.json")
+        logging.config.dictConfig(logger_config)
+        logging.getLogger().setLevel(getattr(logging, self.LOG_LEVEL))
 
     def __load_parameter_store(self):
-        module = getattr(
-            importlib.import_module(self.PARAMETER_STORE_MODULE["path"]),
-            self.PARAMETER_STORE_MODULE["class_name"],
+        parameters = Resource.load_json("parameters.json")
+        parameter_map = parameters[self.PARAMETER_STORE_MODULE.value]
+        return Modules.get_class_default_instance(
+            self.PARAMETER_STORE_MODULE,
+            parameter_map=parameter_map,
         )
-        return module()
 
     def get_parameter(self, name: str) -> Optional[str]:
         return self.__parameter_store_adapter.get_parameter(name)
@@ -70,25 +48,15 @@ class TestConfig(Config):
 
 
 class DevelopmentConfig(Config):
-    PARAMETER_STORE_MODULE = {
-        "path": "src.adapters.parameters.ssm",
-        "class_name": "SSMParameterStoreAdapter",
-    }
+    pass
 
 
 class StagingConfig(Config):
-    PARAMETER_STORE_MODULE = {
-        "path": "src.adapters.parameters.ssm",
-        "class_name": "SSMParameterStoreAdapter",
-    }
+    pass
 
 
 class ProductionConfig(Config):
     LOG_LEVEL = "INFO"
-    PARAMETER_STORE_MODULE = {
-        "path": "src.adapters.parameters.ssm",
-        "class_name": "SSMParameterStoreAdapter",
-    }
 
 
 def config_factory(environment: str) -> Config:

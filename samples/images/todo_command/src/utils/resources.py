@@ -1,13 +1,13 @@
 import json
 import os
+from typing import Any
 
 
 class Resource:
-    def __init__(self) -> None:
-        self._path = os.path.join(os.getcwd(), "src", "resources")
-
-    def load_json(self, path: str) -> dict:
-        absolute_path = os.path.join(self._path, path)
+    @staticmethod
+    def load_json(path: str) -> Any:
+        base_path = os.path.join(os.getcwd(), "src", "resources")
+        absolute_path = os.path.join(base_path, path)
         if not os.path.isfile(absolute_path):
             raise FileNotFoundError(
                 f"The file {absolute_path} does not exist."

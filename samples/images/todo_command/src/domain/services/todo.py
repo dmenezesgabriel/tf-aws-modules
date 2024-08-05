@@ -12,15 +12,12 @@ class TodoService:
     def __init__(self, todo_repository, event_publisher) -> None:
         self.__todo_repository = todo_repository
         self.__event_publisher = event_publisher
-        self.__queue_name = config.get_parameter("TODO_QUEUE")
 
     def create_todo(self, title: str, description: str, done: bool) -> Todo:
         try:
             todo = Todo(title=title, description=description, done=done)
             created_todo = self.__todo_repository.create_todo(todo=todo)
-            self.__event_publisher.publish(
-                self.__queue_name, "todo_created", {}
-            )
+            self.__event_publisher.publish("todo_created", {})
             return created_todo
         except Exception as error:
             logger.error(error)

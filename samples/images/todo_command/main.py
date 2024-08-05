@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.adapters.database.postgres.todo import PostgresTodoAdapter
-from src.adapters.http.fastapi.api import HTTPApiAdapter
-from src.adapters.publisher.pika import PikaAdapter
+from src.adapters.http.fastapi.api import FastApiTodoAdapter
+from src.adapters.publisher.pika.todo import PikaTodoAdapter
 from src.config import get_config
 from src.domain.services.todo import TodoService
 
@@ -17,11 +17,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     postgres_adapter = PostgresTodoAdapter()
-    pika_adapter = PikaAdapter()
+    pika_adapter = PikaTodoAdapter()
     todo_service = TodoService(
         todo_repository=postgres_adapter, event_publisher=pika_adapter
     )
-    http_api_adapter = HTTPApiAdapter(todo_service=todo_service)
+    http_api_adapter = FastApiTodoAdapter(todo_service=todo_service)
     app.include_router(http_api_adapter.router, prefix=config.APP_PATH)
     yield
 

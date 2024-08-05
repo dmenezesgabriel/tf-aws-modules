@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 from src.domain.entities.todo import Todo
 
-class TodoRepository(ABC):
+
+class TodoRepositoryPort(ABC):
     @abstractmethod
     def create_todo(self, todo: Todo) -> Todo:
         raise NotImplementedError

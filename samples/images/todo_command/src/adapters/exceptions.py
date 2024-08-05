@@ -4,3 +4,7 @@ class ParameterStoreException(Exception):
 
 class ParameterNotFound(Exception):
     pass
+
+
+class PublisherChannelNotFound(Exception):
+    pass

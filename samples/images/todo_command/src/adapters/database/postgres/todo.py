@@ -17,14 +17,14 @@ from sqlalchemy.orm import sessionmaker
 
 from src.config import get_config
 from src.domain.entities.todo import Todo
-from src.ports.todo_repository import TodoRepository
+from src.ports.todo_repository import TodoRepositoryPort
 
 config = get_config()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class PostgresTodoAdapter(TodoRepository):
+class PostgresTodoAdapter(TodoRepositoryPort):
     def __init__(self):
         self.__engine = create_engine(self.database_url)
         self._metadata = MetaData()

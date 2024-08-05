@@ -1,9 +1,12 @@
 import json
 import logging
+from typing import Optional
 
 import pika
 
+from src.adapters.exceptions import PublisherChannelNotFound
 from src.config import get_config
+from src.ports.publisher import PublisherPort
 
 logging.getLogger("pika").setLevel(logging.CRITICAL)
 
@@ -11,10 +14,12 @@ config = get_config()
 logger = logging.getLogger()
 
 
-class PikaAdapter:
-    def __init__(self):
+class PikaAdapter(PublisherPort):
+    def __init__(self, queue: str, exchange: str = ""):
         self._connection = None
         self._channel = None
+        self._queue = queue
+        self._exchange = exchange
 
     def _get_broker_url(self):
         user = config.get_parameter("RABBITMQ_DEFAULT_USER")
@@ -33,18 +38,26 @@ class PikaAdapter:
             logger.info("Connected to RabbitMQ")
 
     def publish(
-        self, queue: str, event_type: str, data: dict, exchange: str = ""
+        self, event_type: str, body: dict, headers: Optional[dict] = None
     ):
+        if not self._channel:
+            raise PublisherChannelNotFound(
+                {
+                    "code": "pika.error.publish",
+                    "message": "Channel not found",
+                }
+            )
         try:
             self._connect()
-            self._channel.queue_declare(queue=queue, durable=True)
-            message = {"event_type": event_type, "data": data}
+            self._channel.queue_declare(queue=self._queue, durable=True)
+            message = {"event_type": event_type, "body": body}
             self._channel.basic_publish(
-                exchange=exchange,
-                routing_key=queue,
+                exchange=self._exchange,
+                routing_key=self._queue,
                 body=json.dumps(message),
+                properties=pika.BasicProperties(headers=headers),
             )
-            logger.info(f"Message published to queue {queue}")
+            logger.info(f"Message published to queue {self._queue}")
         except Exception as error:
             logger.error(f"Failed to publish message: {error}")
         finally:
