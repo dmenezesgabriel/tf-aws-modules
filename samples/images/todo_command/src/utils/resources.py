@@ -1,6 +1,9 @@
 import json
+import logging
 import os
 from typing import Any
+
+logger = logging.getLogger()
 
 
 class Resource:
@@ -16,7 +19,10 @@ class Resource:
         with open(absolute_path, "r") as file:
             try:
                 return json.load(file)
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError as error:
+                logger.error(f"Error: {error}")
                 raise ValueError(
-                    f"Error decoding JSON from file {absolute_path}: {e}"
+                    f"Error decoding JSON from file {absolute_path}: {error}"
                 )
+            except Exception as error:
+                logger.error(f"Error: {error}")

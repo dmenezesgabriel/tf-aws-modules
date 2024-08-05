@@ -33,7 +33,7 @@ class Modules:
             )
             return module(*args, **kwargs)
         except Exception as error:
-            logger.info(error)
+            logger.info(f"Error: {error}")
 
     @classmethod
     def get_class_default_instance(cls, module: Module, *args, **kwargs):
