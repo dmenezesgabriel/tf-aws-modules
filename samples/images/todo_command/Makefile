@@ -9,7 +9,14 @@ apply-migrations:
 
 unit-tests:
 	docker compose -f docker-compose-test.yaml run --rm tests /bin/bash -c \
-	"python -m pytest tests -s -vv -x --cov . --cov-report=html:/app/reports/coverage --alluredir /app/allure-results"
+	"python -m pytest \
+	tests -s -vv -x --cov . \
+	--cov-report=html:/app/reports/coverage \
+	--cov-report=xml:/app/reports/coverage/coverage.xml \
+	--alluredir /app/allure-results"
 
 allure:
-	docker compose -f docker-compose-test.yaml up allure
+	docker compose -f docker-compose-test.yaml up -d allure
+
+sonar-scan:
+	docker compose -f docker-compose-sonnar.yaml run --rm sonar-scanner

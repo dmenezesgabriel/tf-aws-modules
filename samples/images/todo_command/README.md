@@ -59,3 +59,12 @@ make allure
 3. Go to Allure dashboard url:
 
 http://localhost:35741
+
+## Useful
+
+Nice Chat GPT prompt for tests:
+
+```txt
+create unit tests using unittest package only in python correctly mocking whatever is necessary with a nice coverage using triple A method:
+<code>
+```

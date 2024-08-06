@@ -10,4 +10,3 @@ RUN yarn global add allure-commandline && \
 EXPOSE 35741
 
 CMD [ "allure", "serve", "-p", "35741", "allure-results" ]
-

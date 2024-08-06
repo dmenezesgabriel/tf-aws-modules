@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Optional
 
-import pika
+import pika  # type: ignore
 
 from src.adapters.exceptions import PublisherChannelNotFound
 from src.config import get_config
