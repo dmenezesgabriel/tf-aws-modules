@@ -7,10 +7,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = var.aws_region_name
-}
-
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-user-pool-${var.name}"
 
