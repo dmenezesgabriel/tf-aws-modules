@@ -26,12 +26,11 @@ services:
     # docker compose run --rm terraform apply
     image: hashicorp/terraform:latest
     volumes:
-      - ./infra/aws/local/setup:/infra
+      - ./infra/aws/local/setup:/infra:rw
     working_dir: /infra
     environment:
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_SESSION_TOKEN=test
+      - AWS_ACCESS_KEY_ID="test"
+      - AWS_SECRET_ACCESS_KEY="test"
     networks:
       - app-network
 
