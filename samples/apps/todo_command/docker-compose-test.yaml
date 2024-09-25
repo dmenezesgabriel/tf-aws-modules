@@ -1,7 +1,7 @@
 services:
   tests:
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile.test
     volumes:
       - .:/app/
@@ -12,7 +12,7 @@ services:
 
   allure:
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile.allure
     volumes:
       - .:/app/
