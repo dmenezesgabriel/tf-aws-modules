@@ -145,3 +145,11 @@ variable "save_to_ssm" {
   type    = bool
   default = true
 }
+
+variable "cognito_user_pool_client_write_attributes" {
+  type = list(string)
+}
+
+variable "cognito_user_pool_client_read_attributes" {
+  type = list(string)
+}

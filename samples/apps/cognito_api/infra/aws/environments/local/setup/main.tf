@@ -101,6 +101,7 @@ module "cognito" {
   cognito_user_pool_client_id_token_validity             = 24
   cognito_user_pool_client_prevent_user_existence_errors = "ENABLED"
   cognito_user_pool_client_enable_token_revocation       = true
-
-  save_to_ssm = true
+  cognito_user_pool_client_write_attributes              = ["email", "name", "role"]
+  cognito_user_pool_client_read_attributes               = ["sub", "email", "name", "role"]
+  save_to_ssm                                            = true
 }

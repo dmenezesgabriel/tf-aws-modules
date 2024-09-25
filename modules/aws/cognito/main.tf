@@ -67,4 +67,6 @@ resource "aws_cognito_user_pool_client" "main" {
   id_token_validity             = var.cognito_user_pool_client_id_token_validity
   prevent_user_existence_errors = var.cognito_user_pool_client_prevent_user_existence_errors
   enable_token_revocation       = var.cognito_user_pool_client_enable_token_revocation
+  write_attributes              = var.cognito_user_pool_client_write_attributes
+  read_attributes               = var.cognito_user_pool_client_read_attributes
 }
