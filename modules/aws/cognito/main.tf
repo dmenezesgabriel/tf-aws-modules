@@ -8,8 +8,7 @@ terraform {
 }
 
 provider "aws" {
-  profile = var.aws_profile
-  region  = var.aws_region_name
+  region = var.aws_region_name
 }
 
 resource "aws_cognito_user_pool" "main" {

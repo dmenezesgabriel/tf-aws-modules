@@ -140,7 +140,6 @@ module "cognito" {
   source = "../../modules/cognito"
 
   name            = "main"
-  aws_profile     = var.aws_profile
   aws_region_name = var.aws_region_name
   project_name    = var.project_name
   cognito_user_pool_password_policy = {

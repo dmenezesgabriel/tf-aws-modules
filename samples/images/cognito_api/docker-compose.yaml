@@ -1,0 +1,40 @@
+services:
+  # auth:
+  #   build: ./services/auth
+  #   ports:
+  #     - "8001:80"
+  #   volumes:
+  #     - ./services/auth:/app/
+  #   env_file:
+  #     - ./services/auth/.env
+  #   networks:
+  #     - app-network
+  #   command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+
+  motoserver:
+    image: motoserver/moto:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - MOTO_PORT=4566
+    networks:
+      - app-network
+
+  terraform:
+    # docker compose run --rm terraform init
+    # docker compose run --rm terraform validate
+    # docker compose run --rm terraform apply
+    image: hashicorp/terraform:latest
+    volumes:
+      - ./infra/aws/local/setup:/infra
+    working_dir: /infra
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_SESSION_TOKEN=test
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
