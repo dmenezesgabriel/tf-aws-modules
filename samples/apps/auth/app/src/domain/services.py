@@ -1,7 +1,7 @@
 import logging
 
 from pydantic import EmailStr
-from src.adapter.dto import (
+from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
     UserSignin,

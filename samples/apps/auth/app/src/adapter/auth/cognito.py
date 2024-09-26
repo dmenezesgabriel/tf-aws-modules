@@ -3,8 +3,8 @@ import logging
 import botocore
 import botocore.exceptions
 from pydantic import EmailStr
-from src.adapter.aws import AWSClientAdapter
-from src.adapter.dto import (
+from src.adapter.cloud.aws.client import AWSClientAdapter
+from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
     UserSignin,

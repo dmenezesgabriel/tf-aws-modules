@@ -70,14 +70,14 @@ class TestConfig(Config):
 
 class DevelopmentConfig(Config):
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapter.parameter.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 
 
 class StagingConfig(Config):
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapter.parameter.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 
@@ -85,7 +85,7 @@ class StagingConfig(Config):
 class ProductionConfig(Config):
     LOG_LEVEL = "INFO"
     PARAMETER_STORE_MODULE = {
-        "path": "src.adapter.ssm",
+        "path": "src.adapter.parameter.ssm",
         "class_name": "SSMParameterStoreAdapter",
     }
 

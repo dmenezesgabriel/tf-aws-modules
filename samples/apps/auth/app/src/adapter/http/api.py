@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 from pydantic import EmailStr
-from src.adapter.dto import (
+from src.common.dto import (
     AccessToken,
     ChangePassword,
     ConfirmForgotPassword,

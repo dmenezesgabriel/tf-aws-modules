@@ -1,4 +1,8 @@
-# Cognito + FastApi
+# Auth app
+
+**Auth adapters**
+
+- AWS Cognito
 
 ## Requirements
 

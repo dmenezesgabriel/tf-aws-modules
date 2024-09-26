@@ -2,8 +2,8 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from src.adapter.cognito import AWSCognitoAdapter
-from src.adapter.http_api import HTTPApiAdapter
+from src.adapter.auth.cognito import AWSCognitoAdapter
+from src.adapter.http.api import HTTPApiAdapter
 from src.config import get_config
 from src.domain.services import AuthService
 
