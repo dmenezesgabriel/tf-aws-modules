@@ -38,7 +38,7 @@ class Modules:
     @classmethod
     def get_class_default_instance(cls, module: Module, *args, **kwargs):
         modules: Dict[str, ImportModule] = Resource.load_json("modules.json")
-        import_module: ImportModule = modules[module.value]
+        import_module: ImportModule = modules[module]
         return cls.get_class_instance(
             import_module["path"], import_module["class_name"], *args, **kwargs
         )

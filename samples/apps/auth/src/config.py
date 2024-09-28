@@ -16,7 +16,7 @@ class Config(metaclass=Singleton):
     LOG_LEVEL = "INFO"
     APP_PATH = "/auth"
     PARAMETER_STORE_MODULE = os.getenv(
-        "PARAMETER_STORE_MODULE", Module.SSM_PARAMETER_STORE
+        "PARAMETER_STORE_MODULE", Module.SSM_PARAMETER_STORE.value
     )
 
     def __init__(self) -> None:
@@ -30,7 +30,7 @@ class Config(metaclass=Singleton):
 
     def __load_parameter_store(self) -> ParameterStorePort:
         parameters = Resource.load_json("parameters.json")
-        parameter_map = parameters[self.PARAMETER_STORE_MODULE.value]
+        parameter_map = parameters[self.PARAMETER_STORE_MODULE]
         return Modules.get_class_default_instance(
             self.PARAMETER_STORE_MODULE,
             parameter_map=parameter_map,
