@@ -11,11 +11,14 @@ from src.adapters.exceptions import (
     TooManyRequestsException,
 )
 from src.common.dto import (
+    AccessTokenResponse,
     ChangePassword,
     ConfirmForgotPassword,
     ForgotPasswordResponse,
-    SignInResponse,
+    GetUserResponse,
     SignUpResponse,
+    User,
+    UserAttribute,
     UserSignin,
     UserSignup,
     UserVerify,
@@ -141,7 +144,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def get_user(self, email: EmailStr) -> Dict[str, Any]:
+    def get_user(self, email: EmailStr) -> GetUserResponse:
         try:
             response = cast(
                 Dict[str, Any],
@@ -149,7 +152,26 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     UserPoolId=self.cognito_app_pool_id, Username=email
                 ),
             )
-            return response
+            return GetUserResponse(
+                data=[
+                    User(
+                        username=response["Username"],
+                        user_attributes=[
+                            UserAttribute(
+                                name=attribute["Name"],
+                                value=attribute["Value"],
+                            )
+                            for attribute in response["UserAttributes"]
+                        ],
+                        user_created_at=str(response["UserCreateDate"]),
+                        user_last_modified_at=str(
+                            response["UserLastModifiedDate"]
+                        ),
+                        user_status=response["UserStatus"],
+                        user_enabled=response["Enabled"],
+                    )
+                ]
+            )
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
             if error.response["Error"]["Code"] == "UserNotFoundException":
@@ -159,7 +181,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def user_signin(self, data: UserSignin) -> SignInResponse:
+    def user_signin(self, data: UserSignin) -> AccessTokenResponse:
         try:
             response = cast(
                 Dict[str, Any],
@@ -172,7 +194,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     },
                 ),
             )
-            return SignInResponse(
+            return AccessTokenResponse(
                 data=[
                     dict(
                         access_token=response["AuthenticationResult"][
@@ -287,7 +309,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def new_access_token(self, refresh_token: str) -> Dict[str, Any]:
+    def new_access_token(self, refresh_token: str) -> AccessTokenResponse:
         try:
             response = cast(
                 Dict[str, Any],
@@ -299,7 +321,23 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     },
                 ),
             )
-            return response
+            return AccessTokenResponse(
+                data=[
+                    dict(
+                        access_token=response["AuthenticationResult"][
+                            "AccessToken"
+                        ],
+                        expires_in=response["AuthenticationResult"][
+                            "ExpiresIn"
+                        ],
+                        token_type=response["AuthenticationResult"][
+                            "TokenType"
+                        ],
+                        refresh_token=None,
+                        id_token=response["AuthenticationResult"]["IdToken"],
+                    )
+                ]
+            )
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
             if error.response["Error"]["Code"] == "LimitExceededException":

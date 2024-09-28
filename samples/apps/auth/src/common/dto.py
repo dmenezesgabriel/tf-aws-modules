@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from annotated_types import MaxLen, MinLen
 from pydantic import BaseModel, EmailStr, Field
@@ -53,16 +53,16 @@ class SignUpResponse(BaseModel):
     data: List[SignUpDict]
 
 
-class SignInDict(TypedDict):
+class AccessTokenDict(TypedDict):
     access_token: str
     expires_in: int
     token_type: str
-    refresh_token: str
     id_token: str
+    refresh_token: Optional[str]
 
 
-class SignInResponse(BaseModel):
-    data: List[SignInDict]
+class AccessTokenResponse(BaseModel):
+    data: List[AccessTokenDict]
 
 
 class ForgotPasswordDict(TypedDict):
@@ -72,3 +72,21 @@ class ForgotPasswordDict(TypedDict):
 
 class ForgotPasswordResponse(BaseModel):
     data: List[ForgotPasswordDict]
+
+
+class UserAttribute(TypedDict):
+    name: str
+    value: str
+
+
+class User(BaseModel):
+    username: str
+    user_attributes: List[UserAttribute]
+    user_created_at: str
+    user_last_modified_at: str
+    user_status: str
+    user_enabled: bool
+
+
+class GetUserResponse(BaseModel):
+    data: List[User]

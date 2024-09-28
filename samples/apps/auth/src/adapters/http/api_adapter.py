@@ -11,11 +11,12 @@ from src.adapters.exceptions import (
 )
 from src.common.dto import (
     AccessToken,
+    AccessTokenResponse,
     ChangePassword,
     ConfirmForgotPassword,
     ForgotPasswordResponse,
+    GetUserResponse,
     RefreshToken,
-    SignInResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -68,7 +69,7 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["Sign in"],
             status_code=200,
-            response_model=SignInResponse,
+            response_model=AccessTokenResponse,
         )
         self.router.add_api_route(
             "/forgot_password",
@@ -96,15 +97,23 @@ class HTTPApiAdapter:
             self.new_access_token,
             methods=["POST"],
             tags=["Refresh token"],
+            status_code=200,
+            response_model=AccessTokenResponse,
         )
         self.router.add_api_route(
-            "/logout", self.logout, methods=["POST"], tags=["Logout"]
+            "/logout",
+            self.logout,
+            methods=["POST"],
+            tags=["Logout"],
+            status_code=204,
         )
         self.router.add_api_route(
             "/user_details",
             self.user_details,
             methods=["POST"],
             tags=["User details"],
+            status_code=200,
+            response_model=GetUserResponse,
         )
 
     def signup_user(self, user: UserSignup) -> SignUpResponse:
@@ -170,7 +179,7 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def signin(self, data: UserSignin) -> SignInResponse:
+    def signin(self, data: UserSignin) -> AccessTokenResponse:
         try:
             return self.__auth_service.user_signin(data)
         except UserNotFoundException:
@@ -241,12 +250,13 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def new_access_token(self, refresh_token: RefreshToken) -> JSONResponse:
+    def new_access_token(
+        self, refresh_token: RefreshToken
+    ) -> AccessTokenResponse:
         try:
-            content = self.__auth_service.new_access_token(
+            return self.__auth_service.new_access_token(
                 refresh_token.refresh_token
             )
-            return JSONResponse(status_code=200, content=content)
         except LimitExceededException:
             raise HTTPException(
                 status_code=429,
@@ -259,10 +269,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def logout(self, access_token: AccessToken) -> JSONResponse:
+    def logout(self, access_token: AccessToken) -> Response:
         try:
-            content = self.__auth_service.logout(access_token.access_token)
-            return JSONResponse(status_code=200, content=content)
+            self.__auth_service.logout(access_token.access_token)
+            return Response(status_code=204)
         except InvalidCredentialsException:
             raise HTTPException(
                 status_code=401, detail="Incorrect username or password."
@@ -279,10 +289,9 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def user_details(self, email: EmailStr) -> JSONResponse:
+    def user_details(self, email: EmailStr) -> GetUserResponse:
         try:
-            content = self.__auth_service.user_details(email)
-            return JSONResponse(status_code=200, content=content)
+            return self.__auth_service.user_details(email)
         except Exception as error:
             logger.exception(error)
             raise HTTPException(

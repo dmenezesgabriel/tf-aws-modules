@@ -4,10 +4,11 @@ from typing import Any, Dict
 from pydantic import EmailStr
 
 from src.common.dto import (
+    AccessTokenResponse,
     ChangePassword,
     ConfirmForgotPassword,
     ForgotPasswordResponse,
-    SignInResponse,
+    GetUserResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -29,11 +30,11 @@ class AuthPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_user(self, email: EmailStr) -> Dict[str, Any]:
+    def get_user(self, email: EmailStr) -> GetUserResponse:
         raise NotImplementedError
 
     @abstractmethod
-    def user_signin(self, data: UserSignin) -> SignInResponse:
+    def user_signin(self, data: UserSignin) -> AccessTokenResponse:
         raise NotImplementedError
 
     @abstractmethod
@@ -51,7 +52,7 @@ class AuthPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def new_access_token(self, refresh_token: str) -> Dict[str, Any]:
+    def new_access_token(self, refresh_token: str) -> AccessTokenResponse:
         raise NotImplementedError
 
     @abstractmethod

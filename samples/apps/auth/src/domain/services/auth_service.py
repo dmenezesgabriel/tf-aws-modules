@@ -4,10 +4,11 @@ from typing import Any, Dict
 from pydantic import EmailStr
 
 from src.common.dto import (
+    AccessTokenResponse,
     ChangePassword,
     ConfirmForgotPassword,
     ForgotPasswordResponse,
-    SignInResponse,
+    GetUserResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -34,7 +35,7 @@ class AuthService:
         response = self.__auth_adapter.resend_confirmation_code(email)
         return response
 
-    def user_signin(self, data: UserSignin) -> SignInResponse:
+    def user_signin(self, data: UserSignin) -> AccessTokenResponse:
         response = self.__auth_adapter.user_signin(data)
         return response
 
@@ -52,7 +53,7 @@ class AuthService:
         response = self.__auth_adapter.change_password(data)
         return response
 
-    def new_access_token(self, refresh_token: str) -> Dict[str, Any]:
+    def new_access_token(self, refresh_token: str) -> AccessTokenResponse:
         response = self.__auth_adapter.new_access_token(refresh_token)
         return response
 
@@ -60,6 +61,6 @@ class AuthService:
         response = self.__auth_adapter.logout(access_token)
         return response
 
-    def user_details(self, email: EmailStr) -> Dict[str, Any]:
+    def user_details(self, email: EmailStr) -> GetUserResponse:
         response = self.__auth_adapter.get_user(email)
         return response
