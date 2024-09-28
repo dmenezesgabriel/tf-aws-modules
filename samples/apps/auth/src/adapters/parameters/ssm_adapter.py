@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Dict, Optional, cast
 
 from botocore.exceptions import ClientError  # type: ignore
 
@@ -11,15 +11,16 @@ logger = logging.getLogger()
 
 
 class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStorePort):
-    def __init__(self, parameter_map: Optional[dict] = None) -> None:
+    def __init__(self, parameter_map: Optional[Dict[str, str]] = None) -> None:
         super().__init__(client_type="ssm")
         self.__parameter_map = parameter_map
         logger.info("Initialized SSM parameter store")
 
     def __get_parameter(self, name: str) -> Optional[str]:
         try:
-            response = self.client.get_parameter(
-                Name=name, WithDecryption=True
+            response = cast(
+                Dict[str, Dict[str, str]],
+                self.client.get_parameter(Name=name, WithDecryption=True),
             )
             return response["Parameter"]["Value"]
         except ClientError as error:

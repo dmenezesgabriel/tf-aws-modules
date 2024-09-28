@@ -1,7 +1,7 @@
 import importlib
 import logging
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 try:
     from typing_extensions import TypedDict
@@ -25,7 +25,12 @@ class Module(Enum):
 
 class Modules:
     @staticmethod
-    def get_class_instance(path: str, class_name: str, *args, **kwargs) -> Any:
+    def get_class_instance(
+        path: str,
+        class_name: str,
+        *args: Tuple[Any, ...],
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         try:
             module = getattr(
                 importlib.import_module(path),
@@ -36,7 +41,12 @@ class Modules:
             logger.info(f"Error: {error}")
 
     @classmethod
-    def get_class_default_instance(cls, module: Module, *args, **kwargs):
+    def get_class_default_instance(
+        cls,
+        module: str,
+        *args: Tuple[Any, ...],
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         modules: Dict[str, ImportModule] = Resource.load_json("modules.json")
         import_module: ImportModule = modules[module]
         return cls.get_class_instance(

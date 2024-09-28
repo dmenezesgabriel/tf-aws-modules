@@ -1,7 +1,7 @@
 import logging
 import logging.config
 import os
-from typing import Optional
+from typing import Optional, cast
 
 from src.ports.parameter_store_port import ParameterStorePort
 from src.utils.module import Module, Modules
@@ -13,8 +13,8 @@ logger = logging.getLogger()
 
 class Config(metaclass=Singleton):
     ENVIRONMENT = os.getenv("ENVIRONMENT")
-    LOG_LEVEL = "INFO"
-    APP_PATH = "/auth"
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    APP_PATH = os.getenv("APP_PATH", "/auth")
     PARAMETER_STORE_MODULE = os.getenv(
         "PARAMETER_STORE_MODULE", Module.SSM_PARAMETER_STORE.value
     )
@@ -31,9 +31,12 @@ class Config(metaclass=Singleton):
     def __load_parameter_store(self) -> ParameterStorePort:
         parameters = Resource.load_json("parameters.json")
         parameter_map = parameters[self.PARAMETER_STORE_MODULE]
-        return Modules.get_class_default_instance(
-            self.PARAMETER_STORE_MODULE,
-            parameter_map=parameter_map,
+        return cast(
+            ParameterStorePort,
+            Modules.get_class_default_instance(
+                self.PARAMETER_STORE_MODULE,
+                parameter_map=parameter_map,
+            ),
         )
 
     def get_parameter(self, name: str) -> Optional[str]:
