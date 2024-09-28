@@ -12,7 +12,7 @@ from src.common.dto import (
     UserSignup,
     UserVerify,
 )
-from src.domain.services import AuthService
+from src.domain.services.auth_service import AuthService
 
 logger = logging.getLogger()
 

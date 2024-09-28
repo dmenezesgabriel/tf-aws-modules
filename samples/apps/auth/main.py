@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.adapters.auth.cognito import AWSCognitoAdapter
-from src.adapters.http.api import HTTPApiAdapter
+from src.adapters.auth.cognito_adapter import AWSCognitoAdapter
+from src.adapters.http.api_adapter import HTTPApiAdapter
 from src.config import get_config
-from src.domain.services import AuthService
+from src.domain.services.auth_service import AuthService
 
 config = get_config()
 logger = logging.getLogger()

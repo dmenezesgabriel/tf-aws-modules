@@ -3,7 +3,7 @@ import logging.config
 import os
 from typing import Optional
 
-from src.ports.parameter_store import ParameterStorePort
+from src.ports.parameter_store_port import ParameterStorePort
 from src.utils.module import Module, Modules
 from src.utils.resources import Resource
 from src.utils.singleton import Singleton

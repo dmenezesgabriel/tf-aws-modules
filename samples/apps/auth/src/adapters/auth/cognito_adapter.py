@@ -4,7 +4,7 @@ import botocore
 import botocore.exceptions
 from pydantic import EmailStr
 
-from src.adapters.cloud.aws.client import AWSClientAdapter
+from src.adapters.cloud.aws_client_adapter import AWSClientAdapter
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,

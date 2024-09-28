@@ -3,9 +3,9 @@ from typing import Optional
 
 from botocore.exceptions import ClientError  # type: ignore
 
-from src.adapters.cloud.aws.client import AWSClientAdapter
+from src.adapters.cloud.aws_client_adapter import AWSClientAdapter
 from src.adapters.exceptions import ParameterNotFound, ParameterStoreException
-from src.ports.parameter_store import ParameterStorePort
+from src.ports.parameter_store_port import ParameterStorePort
 
 logger = logging.getLogger()
 
