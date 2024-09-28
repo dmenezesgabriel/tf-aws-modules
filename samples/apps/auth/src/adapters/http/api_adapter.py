@@ -83,6 +83,7 @@ class HTTPApiAdapter:
             self.confirm_forgot_password,
             methods=["POST"],
             tags=["Password"],
+            status_code=204,
         )
         self.router.add_api_route(
             "/change_password",
@@ -173,10 +174,10 @@ class HTTPApiAdapter:
         try:
             return self.__auth_service.user_signin(data)
         except UserNotFoundException:
-            raise HTTPException(status_code="404", detail="User not found.")
+            raise HTTPException(status_code=404, detail="User not found.")
         except UserNotConfirmedException:
             raise HTTPException(
-                status_code="403",
+                status_code=403,
                 detail="Please verify if your account is confirmed.",
             )
         except InvalidCredentialsException:
@@ -197,7 +198,7 @@ class HTTPApiAdapter:
         try:
             return self.__auth_service.forgot_password(email)
         except UserNotFoundException:
-            raise HTTPException(status_code="404", detail="User not found.")
+            raise HTTPException(status_code=404, detail="User not found.")
         except Exception as error:
             logger.exception(error)
             raise HTTPException(
@@ -205,18 +206,14 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def confirm_forgot_password(
-        self, data: ConfirmForgotPassword
-    ) -> JSONResponse:
+    def confirm_forgot_password(self, data: ConfirmForgotPassword) -> Response:
         try:
-            content = self.__auth_service.confirm_forgot_password(data)
-            return JSONResponse(status_code=200, content=content)
+            self.__auth_service.confirm_forgot_password(data)
+            return Response(status_code=204)
         except ExpiredVerificationCodeException:
-            raise HTTPException(status_code="403", detail="Code expired.")
+            raise HTTPException(status_code=403, detail="Code expired.")
         except InvalidVerificationCodeException:
-            raise HTTPException(
-                status_code="400", detail="Code does not match."
-            )
+            raise HTTPException(status_code=400, detail="Code does not match.")
         except Exception as error:
             logger.exception(error)
             raise HTTPException(
@@ -224,17 +221,17 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def change_password(self, data: ChangePassword) -> JSONResponse:
+    def change_password(self, data: ChangePassword) -> Response:
         try:
-            content = self.__auth_service.change_password(data)
-            return JSONResponse(status_code=200, content=content)
+            self.__auth_service.change_password(data)
+            return Response(status_code=204)
         except InvalidCredentialsException:
             raise HTTPException(
-                status_code="401", detail="Incorrect username or password."
+                status_code=401, detail="Incorrect username or password."
             )
         except LimitExceededException:
             raise HTTPException(
-                status_code="429",
+                status_code=429,
                 detail="Attempt limit exceeded, please try again later.",
             )
         except Exception as error:
@@ -252,7 +249,7 @@ class HTTPApiAdapter:
             return JSONResponse(status_code=200, content=content)
         except LimitExceededException:
             raise HTTPException(
-                status_code="429",
+                status_code=429,
                 detail="Attempt limit exceeded, please try again later.",
             )
         except Exception as error:
@@ -268,11 +265,11 @@ class HTTPApiAdapter:
             return JSONResponse(status_code=200, content=content)
         except InvalidCredentialsException:
             raise HTTPException(
-                status_code="401", detail="Incorrect username or password."
+                status_code=401, detail="Incorrect username or password."
             )
         except TooManyRequestsException:
             raise HTTPException(
-                status_code="429",
+                status_code=429,
                 detail="Attempt limit exceeded, please try again later.",
             )
         except Exception as error:
