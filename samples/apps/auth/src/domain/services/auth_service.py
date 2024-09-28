@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    SignInResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -29,13 +30,10 @@ class AuthService:
         return response
 
     def resend_confirmation_code(self, email: EmailStr) -> Dict[str, Any]:
-        response = self.__auth_adapter.check_user_exists(email)
-        if response:
-            return response
         response = self.__auth_adapter.resend_confirmation_code(email)
         return response
 
-    def user_signin(self, data: UserSignin) -> Dict[str, Any]:
+    def user_signin(self, data: UserSignin) -> SignInResponse:
         response = self.__auth_adapter.user_signin(data)
         return response
 
@@ -62,5 +60,5 @@ class AuthService:
         return response
 
     def user_details(self, email: EmailStr) -> Dict[str, Any]:
-        response = self.__auth_adapter.check_user_exists(email)
+        response = self.__auth_adapter.get_user(email)
         return response

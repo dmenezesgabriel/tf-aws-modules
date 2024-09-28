@@ -6,6 +6,8 @@ from pydantic import EmailStr
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    SignInResponse,
+    SignUpResponse,
     UserSignin,
     UserSignup,
     UserVerify,
@@ -14,7 +16,7 @@ from src.common.dto import (
 
 class AuthPort(ABC):
     @abstractmethod
-    def user_signup(self, user: UserSignup) -> Dict[str, Any]:
+    def user_signup(self, user: UserSignup) -> SignUpResponse:
         raise NotImplementedError
 
     @abstractmethod
@@ -26,11 +28,11 @@ class AuthPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def check_user_exists(self, email: EmailStr) -> Dict[str, Any]:
+    def get_user(self, email: EmailStr) -> Dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def user_signin(self, data: UserSignin) -> Dict[str, Any]:
+    def user_signin(self, data: UserSignin) -> SignInResponse:
         raise NotImplementedError
 
     @abstractmethod

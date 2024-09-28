@@ -14,6 +14,7 @@ from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
     RefreshToken,
+    SignInResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -25,6 +26,7 @@ from src.domain.exceptions import (
     InvalidVerificationCodeException,
     RequirementsDoesNotMatchException,
     UnauthorizedException,
+    UserAlreadyConfirmed,
     UserAlreadyExistsException,
     UserNotConfirmedException,
     UserNotFoundException,
@@ -60,7 +62,12 @@ class HTTPApiAdapter:
             tags=["Account confirmation"],
         )
         self.router.add_api_route(
-            "/signin", self.signin, methods=["POST"], tags=["Sign in"]
+            "/signin",
+            self.signin,
+            methods=["POST"],
+            tags=["Sign in"],
+            status_code=200,
+            response_model=SignInResponse,
         )
         self.router.add_api_route(
             "/forgot_password",
@@ -109,7 +116,8 @@ class HTTPApiAdapter:
                 status_code=400,
                 detail="Password requirements does not match.",
             )
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -132,30 +140,35 @@ class HTTPApiAdapter:
             raise HTTPException(status_code=404, detail="User not found.")
         except UnauthorizedException:
             raise HTTPException(status_code=403, detail="Not Authorized.")
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
             )
 
-    def resend_confirmation_code(self, email: EmailStr) -> JSONResponse:
+    def resend_confirmation_code(self, email: EmailStr) -> Response:
         try:
-            content = self.__auth_service.resend_confirmation_code(email)
-            return JSONResponse(status_code=200, content=content)
+            self.__auth_service.resend_confirmation_code(email)
+            return Response(status_code=204)
         except UserNotFoundException:
-            raise HTTPException(status_code="404", detail="User not found.")
+            raise HTTPException(status_code=404, detail="User not found.")
         except LimitExceededException:
             raise HTTPException(status_code=429, detail="Limit Exceeded.")
-        except Exception:
+        except UserAlreadyConfirmed:
+            raise HTTPException(
+                status_code=400, detail="User already confirmed"
+            )
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
             )
 
-    def signin(self, data: UserSignin) -> JSONResponse:
+    def signin(self, data: UserSignin) -> SignInResponse:
         try:
-            content = self.__auth_service.user_signin(data)
-            return JSONResponse(status_code=200, content=content)
+            return self.__auth_service.user_signin(data)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
         except UserNotConfirmedException:
@@ -167,7 +180,8 @@ class HTTPApiAdapter:
             raise HTTPException(
                 status_code=401, detail="Incorrect username or password."
             )
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -182,7 +196,8 @@ class HTTPApiAdapter:
             return JSONResponse(status_code=200, content=content)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -200,8 +215,8 @@ class HTTPApiAdapter:
             raise HTTPException(
                 status_code="400", detail="Code does not match."
             )
-
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -220,7 +235,8 @@ class HTTPApiAdapter:
                 status_code="429",
                 detail="Attempt limit exceeded, please try again later.",
             )
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -237,7 +253,8 @@ class HTTPApiAdapter:
                 status_code="429",
                 detail="Attempt limit exceeded, please try again later.",
             )
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -256,7 +273,8 @@ class HTTPApiAdapter:
                 status_code="429",
                 detail="Attempt limit exceeded, please try again later.",
             )
-        except Exception:
+        except Exception as error:
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",
@@ -267,7 +285,7 @@ class HTTPApiAdapter:
             content = self.__auth_service.user_details(email)
             return JSONResponse(status_code=200, content=content)
         except Exception as error:
-            logger.info(error)
+            logger.exception(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",

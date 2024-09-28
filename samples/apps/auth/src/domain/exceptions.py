@@ -10,6 +10,10 @@ class UserNotConfirmedException(Exception):
     pass
 
 
+class UserAlreadyConfirmed(Exception):
+    pass
+
+
 class UnauthorizedException(Exception):
     pass
 

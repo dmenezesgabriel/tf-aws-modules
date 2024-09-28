@@ -13,6 +13,7 @@ from src.adapters.exceptions import (
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    SignInResponse,
     SignUpResponse,
     UserSignin,
     UserSignup,
@@ -139,7 +140,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def check_user_exists(self, email: EmailStr) -> Dict[str, Any]:
+    def get_user(self, email: EmailStr) -> Dict[str, Any]:
         try:
             response = cast(
                 Dict[str, Any],
@@ -157,7 +158,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def user_signin(self, data: UserSignin) -> Dict[str, Any]:
+    def user_signin(self, data: UserSignin) -> SignInResponse:
         try:
             response = cast(
                 Dict[str, Any],
@@ -170,7 +171,26 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     },
                 ),
             )
-            return response
+            return SignInResponse(
+                data=[
+                    dict(
+                        access_token=response["AuthenticationResult"][
+                            "AccessToken"
+                        ],
+                        expires_in=response["AuthenticationResult"][
+                            "ExpiresIn"
+                        ],
+                        token_type=response["AuthenticationResult"][
+                            "TokenType"
+                        ],
+                        refresh_token=response["AuthenticationResult"][
+                            "RefreshToken"
+                        ],
+                        id_token=response["AuthenticationResult"]["IdToken"],
+                    )
+                ]
+            )
+
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
             if error.response["Error"]["Code"] == "UserNotFoundException":

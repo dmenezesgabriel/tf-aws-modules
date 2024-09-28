@@ -51,3 +51,15 @@ class SignUpDict(TypedDict):
 
 class SignUpResponse(BaseModel):
     data: List[SignUpDict]
+
+
+class SignInDict(TypedDict):
+    access_token: str
+    expires_in: int
+    token_type: str
+    refresh_token: str
+    id_token: str
+
+
+class SignInResponse(BaseModel):
+    data: List[SignInDict]
