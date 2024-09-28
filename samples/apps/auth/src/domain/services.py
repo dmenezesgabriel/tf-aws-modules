@@ -1,6 +1,7 @@
 import logging
 
 from pydantic import EmailStr
+
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
@@ -13,7 +14,7 @@ logger = logging.getLogger()
 
 
 class AuthService:
-    def __init__(self, auth_adapter):
+    def __init__(self, auth_adapter) -> None:
         self.__auth_adapter = auth_adapter
 
     def user_signup(self, user: UserSignup):

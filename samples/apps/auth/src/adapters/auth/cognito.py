@@ -3,7 +3,8 @@ import logging
 import botocore
 import botocore.exceptions
 from pydantic import EmailStr
-from src.adapter.cloud.aws.client import AWSClientAdapter
+
+from src.adapters.cloud.aws.client import AWSClientAdapter
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
@@ -18,7 +19,7 @@ config = get_config()
 
 
 class AWSCognitoAdapter(AWSClientAdapter):
-    def __init__(self, client_type="cognito-idp"):
+    def __init__(self, client_type: str = "cognito-idp") -> None:
         super().__init__(client_type=client_type)
         self.cognito_app_pool_id = config.get_parameter(
             "AWS_COGNITO_USER_POOL_ID"

@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional, Type
 
 import boto3  # type: ignore
 
@@ -7,7 +8,7 @@ logger = logging.getLogger()
 
 
 class AWSClientAdapter:
-    def __init__(self, client_type):
+    def __init__(self, client_type: str) -> None:
         self._type = client_type
         self._aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
         self._aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -20,7 +21,7 @@ class AWSClientAdapter:
 
         self._client = self.__create_client()
 
-    def __set_credentials(self):
+    def __set_credentials(self) -> None:
         try:
             session = boto3.Session()
             credentials = session.get_credentials()
@@ -32,7 +33,7 @@ class AWSClientAdapter:
             logger.error(f"Failed to get credentials from session: {error}")
             raise
 
-    def __create_client(self):
+    def __create_client(self) -> Type[boto3.client]:
         try:
             client = boto3.client(
                 self._type,
@@ -43,31 +44,31 @@ class AWSClientAdapter:
                 region_name=self.aws_region_name,
             )
             logger.info(f"{self._type} client connected successfully.")
-            return client
+            return client  # type: ignore
         except Exception as error:
             logger.error(f"Failed to create {self._type}: {error}")
             raise
 
     @property
-    def client(self):
+    def client(self) -> Type[boto3.client]:
         return self._client
 
     @property
-    def aws_access_key_id(self):
+    def aws_access_key_id(self) -> Optional[str]:
         return self._aws_access_key_id
 
     @property
-    def aws_secret_access_key(self):
+    def aws_secret_access_key(self) -> Optional[str]:
         return self._aws_secret_access_key
 
     @property
-    def aws_session_token(self):
+    def aws_session_token(self) -> Optional[str]:
         return self._aws_session_token
 
     @property
-    def aws_endpoint_url(self):
+    def aws_endpoint_url(self) -> Optional[str]:
         return self._aws_endpoint_url
 
     @property
-    def aws_region_name(self):
+    def aws_region_name(self) -> Optional[str]:
         return self._aws_region_name

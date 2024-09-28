@@ -13,10 +13,10 @@ logger = logging.getLogger()
 
 class Config(metaclass=Singleton):
     ENVIRONMENT = os.getenv("ENVIRONMENT")
-    LOG_LEVEL = "DEBUG"
-    APP_PATH = "/command"
+    LOG_LEVEL = "INFO"
+    APP_PATH = "/auth"
     PARAMETER_STORE_MODULE = os.getenv(
-        "PARAMETER_STORE_MODULE", Module.ENVIRONMENT_PARAMETER_STORE
+        "PARAMETER_STORE_MODULE", Module.SSM_PARAMETER_STORE
     )
 
     def __init__(self) -> None:

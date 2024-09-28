@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter
 from pydantic import EmailStr
+
 from src.common.dto import (
     AccessToken,
     ChangePassword,
@@ -11,12 +12,13 @@ from src.common.dto import (
     UserSignup,
     UserVerify,
 )
+from src.domain.services import AuthService
 
 logger = logging.getLogger()
 
 
 class HTTPApiAdapter:
-    def __init__(self, auth_service):
+    def __init__(self, auth_service: AuthService) -> None:
         self.__auth_service = auth_service
         self.router = APIRouter()
         self.router.add_api_route(
