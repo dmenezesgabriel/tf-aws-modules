@@ -13,6 +13,7 @@ from src.adapters.exceptions import (
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    SignUpResponse,
     UserSignin,
     UserSignup,
     UserVerify,
@@ -43,28 +44,38 @@ class AWSCognitoAdapter(AWSClientAdapter):
             "AWS_COGNITO_APP_CLIENT_ID"
         )
 
-    def user_signup(self, user: UserSignup) -> Dict[str, Any]:
+    def user_signup(self, user: UserSignup) -> SignUpResponse:
         try:
-            response = cast(
-                Dict[str, Any],
-                self.client.sign_up(
-                    ClientId=self.cognito_user_pool_client_id,
-                    Username=user.email,
-                    Password=user.password,
-                    UserAttributes=[
-                        {
-                            "Name": "name",
-                            "Value": user.full_name,
-                        },
-                        {
-                            "Name": "email",
-                            "Value": user.email,
-                        },
-                        {"Name": "custom:role", "Value": user.role},
-                    ],
-                ),
+            response = self.client.sign_up(
+                ClientId=self.cognito_user_pool_client_id,
+                Username=user.email,
+                Password=user.password,
+                UserAttributes=[
+                    {
+                        "Name": "name",
+                        "Value": user.full_name,
+                    },
+                    {
+                        "Name": "email",
+                        "Value": user.email,
+                    },
+                    {"Name": "custom:role", "Value": user.role},
+                ],
             )
-            return response
+            return SignUpResponse(
+                data=[
+                    dict(
+                        user_id=response["UserSub"],
+                        user_confirmed=response["UserConfirmed"],
+                        code_delivery_destination=response[
+                            "CodeDeliveryDetails"
+                        ]["Destination"],
+                        code_delivery_type=response["CodeDeliveryDetails"][
+                            "AttributeName"
+                        ],
+                    )
+                ]
+            )
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
             if error.response["Error"]["Code"] == "UsernameExistsException":

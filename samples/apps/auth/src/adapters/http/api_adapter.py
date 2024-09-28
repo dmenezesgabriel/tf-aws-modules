@@ -1,14 +1,12 @@
 import logging
-from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import EmailStr
+from starlette.responses import Response
 
 from src.adapters.exceptions import (
     LimitExceededException,
-    ParameterNotFoundException,
-    ParameterStoreException,
     TooManyRequestsException,
 )
 from src.common.dto import (
@@ -16,6 +14,7 @@ from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
     RefreshToken,
+    SignUpResponse,
     UserSignin,
     UserSignup,
     UserVerify,
@@ -40,39 +39,64 @@ class HTTPApiAdapter:
         self.__auth_service = auth_service
         self.router = APIRouter()
         self.router.add_api_route(
-            "/signup", self.signup_user, methods=["POST"]
+            "/signup",
+            self.signup_user,
+            methods=["POST"],
+            tags=["Sign up"],
+            response_model=SignUpResponse,
+            status_code=200,
         )
         self.router.add_api_route(
             "/verify_account",
             self.verify_account,
             methods=["POST"],
+            tags=["Account confirmation"],
+            status_code=204,
         )
         self.router.add_api_route(
             "/resend_confirmation_code",
             self.resend_confirmation_code,
             methods=["POST"],
+            tags=["Account confirmation"],
         )
-        self.router.add_api_route("/signin", self.signin, methods=["POST"])
         self.router.add_api_route(
-            "/forgot_password", self.forgot_password, methods=["POST"]
+            "/signin", self.signin, methods=["POST"], tags=["Sign in"]
+        )
+        self.router.add_api_route(
+            "/forgot_password",
+            self.forgot_password,
+            methods=["POST"],
+            tags=["Password"],
         )
         self.router.add_api_route(
             "/confirm_forgot_password",
             self.confirm_forgot_password,
             methods=["POST"],
+            tags=["Password"],
         )
         self.router.add_api_route(
-            "/change_password", self.change_password, methods=["POST"]
+            "/change_password",
+            self.change_password,
+            methods=["POST"],
+            tags=["Password"],
         )
         self.router.add_api_route(
-            "/new_access_token", self.new_access_token, methods=["POST"]
+            "/new_access_token",
+            self.new_access_token,
+            methods=["POST"],
+            tags=["Refresh token"],
         )
-        self.router.add_api_route("/logout", self.logout, methods=["POST"])
         self.router.add_api_route(
-            "/user_details", self.user_details, methods=["POST"]
+            "/logout", self.logout, methods=["POST"], tags=["Logout"]
+        )
+        self.router.add_api_route(
+            "/user_details",
+            self.user_details,
+            methods=["POST"],
+            tags=["User details"],
         )
 
-    def signup_user(self, user: UserSignup) -> Dict[str, Any]:
+    def signup_user(self, user: UserSignup) -> SignUpResponse:
         try:
             return self.__auth_service.user_signup(user)
         except UserAlreadyExistsException:
@@ -91,9 +115,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def verify_account(self, data: UserVerify) -> Dict[str, Any]:
+    def verify_account(self, data: UserVerify) -> Response:
         try:
-            return self.__auth_service.verify_account(data)
+            self.__auth_service.verify_account(data)
+            return Response(status_code=204)
         except InvalidVerificationCodeException:
             raise HTTPException(
                 status_code=400,
@@ -113,9 +138,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def resend_confirmation_code(self, email: EmailStr) -> Dict[str, Any]:
+    def resend_confirmation_code(self, email: EmailStr) -> JSONResponse:
         try:
-            return self.__auth_service.resend_confirmation_code(email)
+            content = self.__auth_service.resend_confirmation_code(email)
+            return JSONResponse(status_code=200, content=content)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
         except LimitExceededException:
@@ -126,9 +152,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def signin(self, data: UserSignin) -> Dict[str, Any]:
+    def signin(self, data: UserSignin) -> JSONResponse:
         try:
-            return self.__auth_service.user_signin(data)
+            content = self.__auth_service.user_signin(data)
+            return JSONResponse(status_code=200, content=content)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
         except UserNotConfirmedException:
@@ -149,9 +176,10 @@ class HTTPApiAdapter:
     def forgot_password(
         self,
         email: EmailStr,
-    ) -> Dict[str, Any]:
+    ) -> JSONResponse:
         try:
-            return self.__auth_service.forgot_password(email)
+            content = self.__auth_service.forgot_password(email)
+            return JSONResponse(status_code=200, content=content)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
         except Exception:
@@ -162,9 +190,10 @@ class HTTPApiAdapter:
 
     def confirm_forgot_password(
         self, data: ConfirmForgotPassword
-    ) -> Dict[str, Any]:
+    ) -> JSONResponse:
         try:
-            return self.__auth_service.confirm_forgot_password(data)
+            content = self.__auth_service.confirm_forgot_password(data)
+            return JSONResponse(status_code=200, content=content)
         except ExpiredVerificationCodeException:
             raise HTTPException(status_code="403", detail="Code expired.")
         except InvalidVerificationCodeException:
@@ -178,9 +207,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def change_password(self, data: ChangePassword) -> Dict[str, Any]:
+    def change_password(self, data: ChangePassword) -> JSONResponse:
         try:
-            return self.__auth_service.change_password(data)
+            content = self.__auth_service.change_password(data)
+            return JSONResponse(status_code=200, content=content)
         except InvalidCredentialsException:
             raise HTTPException(
                 status_code="401", detail="Incorrect username or password."
@@ -196,11 +226,12 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def new_access_token(self, refresh_token: RefreshToken) -> Dict[str, Any]:
+    def new_access_token(self, refresh_token: RefreshToken) -> JSONResponse:
         try:
-            return self.__auth_service.new_access_token(
+            content = self.__auth_service.new_access_token(
                 refresh_token.refresh_token
             )
+            return JSONResponse(status_code=200, content=content)
         except LimitExceededException:
             raise HTTPException(
                 status_code="429",
@@ -212,9 +243,10 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def logout(self, access_token: AccessToken) -> Dict[str, Any]:
+    def logout(self, access_token: AccessToken) -> JSONResponse:
         try:
-            return self.__auth_service.logout(access_token.access_token)
+            content = self.__auth_service.logout(access_token.access_token)
+            return JSONResponse(status_code=200, content=content)
         except InvalidCredentialsException:
             raise HTTPException(
                 status_code="401", detail="Incorrect username or password."
@@ -230,10 +262,12 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def user_details(self, email: EmailStr) -> Dict[str, Any]:
+    def user_details(self, email: EmailStr) -> JSONResponse:
         try:
-            return self.__auth_service.user_details(email)
-        except Exception:
+            content = self.__auth_service.user_details(email)
+            return JSONResponse(status_code=200, content=content)
+        except Exception as error:
+            logger.info(error)
             raise HTTPException(
                 status_code=500,
                 detail="Internal Server Error.",

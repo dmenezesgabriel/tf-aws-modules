@@ -1,7 +1,8 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from annotated_types import MaxLen, MinLen
 from pydantic import BaseModel, EmailStr, Field
+from typing_extensions import TypedDict
 
 
 class UserSignup(BaseModel):
@@ -39,3 +40,14 @@ class RefreshToken(BaseModel):
 
 class AccessToken(BaseModel):
     access_token: str
+
+
+class SignUpDict(TypedDict):
+    user_id: str
+    user_confirmed: bool
+    code_delivery_destination: str
+    code_delivery_type: str
+
+
+class SignUpResponse(BaseModel):
+    data: List[SignUpDict]
