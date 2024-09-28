@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    ForgotPasswordResponse,
     SignInResponse,
     SignUpResponse,
     UserSignin,
@@ -37,7 +38,7 @@ class AuthService:
         response = self.__auth_adapter.user_signin(data)
         return response
 
-    def forgot_password(self, email: EmailStr) -> Dict[str, Any]:
+    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponse:
         response = self.__auth_adapter.forgot_password(email)
         return response
 

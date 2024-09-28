@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    ForgotPasswordResponse,
     SignInResponse,
     SignUpResponse,
     UserSignin,
@@ -36,7 +37,7 @@ class AuthPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def forgot_password(self, email: EmailStr) -> Dict[str, Any]:
+    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponse:
         raise NotImplementedError
 
     @abstractmethod

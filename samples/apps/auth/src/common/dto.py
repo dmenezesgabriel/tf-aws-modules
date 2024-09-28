@@ -63,3 +63,12 @@ class SignInDict(TypedDict):
 
 class SignInResponse(BaseModel):
     data: List[SignInDict]
+
+
+class ForgotPasswordDict(TypedDict):
+    code_delivery_destination: str
+    code_delivery_type: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    data: List[ForgotPasswordDict]

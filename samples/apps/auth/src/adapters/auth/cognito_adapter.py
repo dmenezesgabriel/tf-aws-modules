@@ -13,6 +13,7 @@ from src.adapters.exceptions import (
 from src.common.dto import (
     ChangePassword,
     ConfirmForgotPassword,
+    ForgotPasswordResponse,
     SignInResponse,
     SignUpResponse,
     UserSignin,
@@ -206,7 +207,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def forgot_password(self, email: EmailStr) -> Dict[str, Any]:
+    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponse:
         try:
             response = cast(
                 Dict[str, Any],
@@ -214,7 +215,18 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     ClientId=self.cognito_user_pool_client_id, Username=email
                 ),
             )
-            return response
+            return ForgotPasswordResponse(
+                data=[
+                    dict(
+                        code_delivery_destination=response[
+                            "CodeDeliveryDetails"
+                        ]["Destination"],
+                        code_delivery_type=response["CodeDeliveryDetails"][
+                            "AttributeName"
+                        ],
+                    )
+                ]
+            )
         except botocore.exceptions.ClientError as error:
             logger.error(error.response)
             if error.response["Error"]["Code"] == "UserNotFoundException":

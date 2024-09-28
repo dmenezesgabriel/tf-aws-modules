@@ -13,6 +13,7 @@ from src.common.dto import (
     AccessToken,
     ChangePassword,
     ConfirmForgotPassword,
+    ForgotPasswordResponse,
     RefreshToken,
     SignInResponse,
     SignUpResponse,
@@ -74,6 +75,8 @@ class HTTPApiAdapter:
             self.forgot_password,
             methods=["POST"],
             tags=["Password"],
+            status_code=200,
+            response_model=ForgotPasswordResponse,
         )
         self.router.add_api_route(
             "/confirm_forgot_password",
@@ -190,10 +193,9 @@ class HTTPApiAdapter:
     def forgot_password(
         self,
         email: EmailStr,
-    ) -> JSONResponse:
+    ) -> ForgotPasswordResponse:
         try:
-            content = self.__auth_service.forgot_password(email)
-            return JSONResponse(status_code=200, content=content)
+            return self.__auth_service.forgot_password(email)
         except UserNotFoundException:
             raise HTTPException(status_code="404", detail="User not found.")
         except Exception as error:
