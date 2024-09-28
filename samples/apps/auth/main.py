@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
@@ -13,7 +14,7 @@ logger = logging.getLogger()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     cognito_adapter = AWSCognitoAdapter()
     auth_service = AuthService(auth_adapter=cognito_adapter)
     http_api = HTTPApiAdapter(auth_service=auth_service)
