@@ -3,7 +3,7 @@ import os
 from typing import Dict, Optional
 
 from ports.parameter_store_port import ParameterStorePort
-from src.adapters.exceptions import ParameterNotFound
+from src.adapters.exceptions import ParameterNotFoundException
 
 logger = logging.getLogger()
 
@@ -17,7 +17,7 @@ class EnvironmentParameterStoreAdapter(ParameterStorePort):
         parameter = os.getenv(key)
         if parameter:
             return parameter
-        raise ParameterNotFound(
+        raise ParameterNotFoundException(
             {
                 "code": "environment.error.__get_parameter",
                 "message": "Parameter not found",

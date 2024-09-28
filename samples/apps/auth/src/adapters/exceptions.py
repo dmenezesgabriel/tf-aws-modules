@@ -2,5 +2,13 @@ class ParameterStoreException(Exception):
     pass
 
 
-class ParameterNotFound(Exception):
+class ParameterNotFoundException(Exception):
+    pass
+
+
+class LimitExceededException(Exception):
+    pass
+
+
+class TooManyRequestsException(Exception):
     pass

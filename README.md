@@ -105,3 +105,4 @@ mongosh --host endpoint:27017 --username username --password password
 - [ecs-fargate-with-alb-deployment-using-terraform](https://medium.com/the-cloud-journal/ecs-fargate-with-alb-deployment-using-terraform-part-2-5547408be49a)
 - [generate-configmap-using-kustomization-but-the-name-in-configmapref-doesnt](https://stackoverflow.com/questions/77606656/generate-configmap-using-kustomization-but-the-name-in-configmapref-doesnt-i)
 - [terraform-best-practices-spacelift](https://spacelift.io/blog/terraform-best-practices)
+- [fastapi-i18n](https://dev.to/whchi/simple-way-to-make-i18n-support-in-fastapi-27kd)

@@ -4,7 +4,10 @@ from typing import Dict, Optional, cast
 from botocore.exceptions import ClientError  # type: ignore
 
 from src.adapters.cloud.aws_client_adapter import AWSClientAdapter
-from src.adapters.exceptions import ParameterNotFound, ParameterStoreException
+from src.adapters.exceptions import (
+    ParameterNotFoundException,
+    ParameterStoreException,
+)
 from src.ports.parameter_store_port import ParameterStorePort
 
 logger = logging.getLogger()
@@ -24,9 +27,9 @@ class SSMParameterStoreAdapter(AWSClientAdapter, ParameterStorePort):
             )
             return response["Parameter"]["Value"]
         except ClientError as error:
-            if error.response["Error"]["Code"] == "ParameterNotFound":
+            if error.response["Error"]["Code"] == "ParameterNotFoundException":
                 logger.error(f"Parameter {name} not found.")
-                raise ParameterNotFound(
+                raise ParameterNotFoundException(
                     {
                         "code": "ssm.error.get_parameter",
                         "message": f"Parameter not found: {error}",
