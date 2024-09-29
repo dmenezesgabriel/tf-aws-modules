@@ -25,4 +25,7 @@ class EnvironmentParameterStoreAdapter(
     def get_parameter(self, name: str) -> Optional[str]:
         if not self.__parameter_map:
             return self.__get_parameter(name)
-        return self.__get_parameter(self.__parameter_map[name])
+        try:
+            return self.__get_parameter(self.__parameter_map[name])
+        except KeyError:
+            raise ParameterNotFoundException("Parameter not found.")
