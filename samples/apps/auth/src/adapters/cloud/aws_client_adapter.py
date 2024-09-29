@@ -4,10 +4,12 @@ from typing import Optional, Type
 
 import boto3  # type: ignore
 
+from src.utils.singleton import SingletonHashABC
+
 logger = logging.getLogger()
 
 
-class AWSClientAdapter:
+class AWSClientAdapter(metaclass=SingletonHashABC):
     def __init__(self, client_type: str) -> None:
         self._type = client_type
         self._aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")

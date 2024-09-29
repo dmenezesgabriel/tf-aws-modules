@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import Enum
 from typing import Any, Literal, Optional, cast
 
@@ -40,7 +41,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
         self.jwks_client = jwks_client
         self.issuer_uri = issuer_uri
 
-    async def __call__(self, request: Request) -> None:
+    async def __call__(self, request: Request) -> str:
         credentials: Optional[HTTPAuthorizationCredentials] = (
             await super().__call__(request)
         )
@@ -107,8 +108,8 @@ class CognitoJWTAuthorizer(HTTPBearer):
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
                 )
         elif self.required_token_use == CognitoTokenUse.ACCESS:
-            logger.error("Wrong token use access")
             if "client_id" not in claims:
+                logger.error("client_id not in claims")
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
                 )
@@ -121,12 +122,12 @@ class CognitoJWTAuthorizer(HTTPBearer):
             raise HTTPException(
                 status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized"
             )
+        return token
 
 
 class CognitoAuthorizerFactory:
     def __init__(self) -> None:
         self.__aws_client = AWSClientAdapter(client_type="sts")
-        self.__jwks_client = self.__get_jwk_client()
         self._issuer_uri = config.get_parameter("AWS_COGNITO_ISSUER_URI")
         self._aws_cognito_user_pool_id = config.get_parameter(
             "AWS_COGNITO_USER_POOL_ID"
@@ -134,12 +135,19 @@ class CognitoAuthorizerFactory:
         self._aws_cognito_app_client_id = config.get_parameter(
             "AWS_COGNITO_APP_CLIENT_ID"
         )
+        self.__jwks_client = self.__get_jwk_client()
 
     def __get_jwk_client(self) -> Any:
         headers = None
         if config.ENVIRONMENT == "local":
             headers = {
-                "Authorization": "AWS4-HMAC-SHA256 Credential=test/20220524/us-east-1/cognito-idp/aws4_request, SignedHeaders=content-length;content-type;host;x-amz-date, Signature=asdf",
+                "Authorization": (
+                    "AWS4-HMAC-SHA256 Credential"
+                    f"={self.__aws_client.aws_access_key_id}/20220524/"
+                    f"{self.__aws_client.aws_region_name}/cognito-idp/"
+                    "aws4_request, SignedHeaders=content-length;content-type;"
+                    "host;x-amz-date, Signature=asdf"
+                ),
                 "x-amz-date": "20220524T000000Z",
                 "Content-Type": "application/json",
                 "Content-Length": "0",
@@ -149,17 +157,15 @@ class CognitoAuthorizerFactory:
     def __get_jwk_uri(self) -> str:
         jwk_uri = config.get_parameter("AWS_COGNITO_JWK_URI")
         if config.ENVIRONMENT == "local":
-            jwk_uri = cast(
-                str, config.get_parameter("AWS_COGNITO_JWK_URI", "environment")
-            ).replace(
-                "{userpoolid}",
-                cast(str, config.get_parameter("AWS_COGNITO_USER_POOL_ID")),
+            jwk_uri = (
+                cast(str, self.__aws_client.aws_endpoint_url)
+                + "/"
+                + cast(str, self._aws_cognito_user_pool_id)
+                + "/.well-known/jwks.json"
             )
-        logger.info(jwk_uri)
         return cast(str, jwk_uri)
 
     def __create_access_token_authorizer(self) -> CognitoJWTAuthorizer:
-        logger.info(self._issuer_uri)
         return CognitoJWTAuthorizer(
             CognitoTokenUse.ACCESS,
             cast(str, self.__aws_client.aws_region_name),

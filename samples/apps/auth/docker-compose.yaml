@@ -18,7 +18,6 @@ services:
       - AWS_COGNITO_APP_CLIENT_ID=test
       - AWS_COGNITO_USER_POOL_ID=test
       - AWS_COGNITO_JWK_URI=http://motoserver:4566/{userpoolid}/.well-known/jwks.json
-      - AWS_COGNITO_ISSUER_URI=http://motoserver:4566/{userpoolid}
     command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     depends_on:
       - motoserver

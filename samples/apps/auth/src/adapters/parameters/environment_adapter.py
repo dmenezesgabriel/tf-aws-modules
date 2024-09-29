@@ -4,11 +4,14 @@ from typing import Dict, Optional
 
 from src.adapters.exceptions import ParameterNotFoundException
 from src.ports.parameter_store_port import ParameterStorePort
+from src.utils.singleton import SingletonHashABC
 
 logger = logging.getLogger()
 
 
-class EnvironmentParameterStoreAdapter(ParameterStorePort):
+class EnvironmentParameterStoreAdapter(
+    ParameterStorePort, metaclass=SingletonHashABC
+):
     def __init__(self, parameter_map: Optional[Dict[str, str]] = None) -> None:
         self.__parameter_map = parameter_map
         logger.info("Initialized Environment parameter store")

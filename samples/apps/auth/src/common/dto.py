@@ -34,12 +34,13 @@ class ChangePassword(BaseModel):
     access_token: str
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: Annotated[str, MinLen(8)]
+    new_password: Annotated[str, MinLen(8)]
+
+
 class RefreshToken(BaseModel):
     refresh_token: str
-
-
-class AccessToken(BaseModel):
-    access_token: str
 
 
 class SignUpDict(TypedDict):

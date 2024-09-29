@@ -10,9 +10,9 @@ from src.adapters.exceptions import (
 )
 from src.adapters.http.cognito_authorizer import CognitoAuthorizerFactory
 from src.common.dto import (
-    AccessToken,
     AccessTokenResponse,
     ChangePassword,
+    ChangePasswordRequest,
     ConfirmForgotPassword,
     ForgotPasswordResponse,
     GetUserResponse,
@@ -241,11 +241,19 @@ class HTTPApiAdapter:
 
     def change_password(
         self,
-        data: ChangePassword,
-        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+        data: ChangePasswordRequest,
+        access_token: str = Depends(
+            CognitoAuthorizerFactory().get("access_token")
+        ),
     ) -> Response:
         try:
-            self.__auth_service.change_password(data)
+            self.__auth_service.change_password(
+                ChangePassword(
+                    old_password=data.old_password,
+                    new_password=data.new_password,
+                    access_token=access_token,
+                )
+            )
             return Response(status_code=204)
         except InvalidCredentialsException:
             raise HTTPException(
@@ -284,11 +292,12 @@ class HTTPApiAdapter:
 
     def logout(
         self,
-        access_token: AccessToken,
-        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+        access_token: str = Depends(
+            CognitoAuthorizerFactory().get("access_token")
+        ),
     ) -> Response:
         try:
-            self.__auth_service.logout(access_token.access_token)
+            self.__auth_service.logout(access_token)
             return Response(status_code=204)
         except InvalidCredentialsException:
             raise HTTPException(
@@ -309,10 +318,12 @@ class HTTPApiAdapter:
     def user_details(
         self,
         email: EmailStr,
-        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+        access_token: str = Depends(
+            CognitoAuthorizerFactory().get("access_token")
+        ),
     ) -> GetUserResponse:
         try:
-            logger.info(f"Token: {token}")
+
             return self.__auth_service.user_details(email)
         except Exception as error:
             logger.exception(error)

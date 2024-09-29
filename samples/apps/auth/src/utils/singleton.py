@@ -1,4 +1,5 @@
 import base64
+from abc import ABCMeta
 from typing import Any, Dict
 
 
@@ -35,3 +36,7 @@ class SingletonHash(type):
     @staticmethod
     def drop() -> None:
         SingletonHash._instances = {}
+
+
+class SingletonHashABC(SingletonHash, ABCMeta):
+    pass
