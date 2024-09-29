@@ -2,8 +2,8 @@ import logging
 import os
 from typing import Dict, Optional
 
-from ports.parameter_store_port import ParameterStorePort
 from src.adapters.exceptions import ParameterNotFoundException
+from src.ports.parameter_store_port import ParameterStorePort
 
 logger = logging.getLogger()
 

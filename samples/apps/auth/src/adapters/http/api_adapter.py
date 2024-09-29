@@ -1,7 +1,6 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
 from starlette.responses import Response
 
@@ -9,6 +8,7 @@ from src.adapters.exceptions import (
     LimitExceededException,
     TooManyRequestsException,
 )
+from src.adapters.http.cognito_authorizer import CognitoAuthorizerFactory
 from src.common.dto import (
     AccessToken,
     AccessTokenResponse,
@@ -91,6 +91,9 @@ class HTTPApiAdapter:
             self.change_password,
             methods=["POST"],
             tags=["Password"],
+            dependencies=[
+                Depends(CognitoAuthorizerFactory().get("access_token"))
+            ],
         )
         self.router.add_api_route(
             "/new_access_token",
@@ -106,6 +109,9 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["Logout"],
             status_code=204,
+            dependencies=[
+                Depends(CognitoAuthorizerFactory().get("access_token"))
+            ],
         )
         self.router.add_api_route(
             "/user_details",
@@ -114,6 +120,9 @@ class HTTPApiAdapter:
             tags=["User details"],
             status_code=200,
             response_model=GetUserResponse,
+            dependencies=[
+                Depends(CognitoAuthorizerFactory().get("access_token"))
+            ],
         )
 
     def signup_user(self, user: UserSignup) -> SignUpResponse:
@@ -230,7 +239,11 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def change_password(self, data: ChangePassword) -> Response:
+    def change_password(
+        self,
+        data: ChangePassword,
+        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+    ) -> Response:
         try:
             self.__auth_service.change_password(data)
             return Response(status_code=204)
@@ -269,7 +282,11 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def logout(self, access_token: AccessToken) -> Response:
+    def logout(
+        self,
+        access_token: AccessToken,
+        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+    ) -> Response:
         try:
             self.__auth_service.logout(access_token.access_token)
             return Response(status_code=204)
@@ -289,8 +306,13 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def user_details(self, email: EmailStr) -> GetUserResponse:
+    def user_details(
+        self,
+        email: EmailStr,
+        token: str = Depends(CognitoAuthorizerFactory().get("access_token")),
+    ) -> GetUserResponse:
         try:
+            logger.info(f"Token: {token}")
             return self.__auth_service.user_details(email)
         except Exception as error:
             logger.exception(error)

@@ -19,7 +19,7 @@ resource "aws_ssm_parameter" "cognito_issuer_uri" {
 
   name  = "/${var.project_name}/cognito/${var.name}/cognito_issuer_uri"
   type  = "String"
-  value = "https://cognito-idp.${var.aws_region_name}.amazonaws.com/${aws_cognito_user_pool.main.id}/"
+  value = "https://cognito-idp.${var.aws_region_name}.amazonaws.com/${aws_cognito_user_pool.main.id}"
 }
 
 resource "aws_ssm_parameter" "cognito_jwk_uri" {
