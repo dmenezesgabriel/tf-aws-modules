@@ -10,11 +10,13 @@ terraform-%:
 		docker compose run --rm terraform $*; \
 	fi
 
-run: terraform-init terraform-validate terraform-apply
+app:
+	@docker compose up app
+
+run: terraform-init terraform-validate terraform-apply app
 	@echo "========================"
 	@echo "Run application"
 	@echo "========================"
-	@docker compose up app
 
 unit-tests:
 	@echo "========================"

@@ -161,7 +161,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                                 name=attribute["Name"],
                                 value=attribute["Value"],
                             )
-                            for attribute in response["UserAttributeDTOs"]
+                            for attribute in response["UserAttributes"]
                         ],
                         user_created_at=str(response["UserCreateDate"]),
                         user_last_modified_at=str(
@@ -207,7 +207,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                             "TokenType"
                         ],
                         refresh_token=response["AuthenticationResult"][
-                            "RefreshTokenDTO"
+                            "RefreshToken"
                         ],
                         id_token=response["AuthenticationResult"]["IdToken"],
                     )

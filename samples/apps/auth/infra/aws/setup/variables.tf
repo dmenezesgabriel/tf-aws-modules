@@ -7,6 +7,12 @@ variable "project_name" {
   type = string
 }
 
+variable "aws_profile" {
+  description = "Aws profile"
+  type        = string
+  default     = null
+}
+
 variable "aws_access_key" {
   description = "The AWS access key."
   type        = string

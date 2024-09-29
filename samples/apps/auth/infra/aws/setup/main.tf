@@ -11,6 +11,7 @@ terraform {
 
 provider "aws" {
   region     = var.aws_region_name
+  profile    = var.aws_profile
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 
@@ -101,7 +102,7 @@ module "cognito" {
   cognito_user_pool_client_id_token_validity             = 24
   cognito_user_pool_client_prevent_user_existence_errors = "ENABLED"
   cognito_user_pool_client_enable_token_revocation       = true
-  cognito_user_pool_client_write_attributes              = ["email", "name", "role"]
-  cognito_user_pool_client_read_attributes               = ["sub", "email", "name", "role"]
+  cognito_user_pool_client_write_attributes              = null
+  cognito_user_pool_client_read_attributes               = null
   save_to_ssm                                            = true
 }
