@@ -55,7 +55,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                 ClientId=self.cognito_user_pool_client_id,
                 Username=user.email,
                 Password=user.password,
-                UserAttributeDTOs=[
+                UserAttributes=[
                     {
                         "Name": "name",
                         "Value": user.full_name,
