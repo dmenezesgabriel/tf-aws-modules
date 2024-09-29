@@ -6,7 +6,7 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - .:/app/
+      - .:/app/:rw
     networks:
       - app-network
     environment:
@@ -34,7 +34,7 @@ services:
   terraform:
     image: hashicorp/terraform:latest
     volumes:
-      - ./infra/aws/environments/local/setup:/infra:rw
+      - ./infra/aws/setup:/infra:rw
     working_dir: /infra
     environment:
       - AWS_ACCESS_KEY_ID="test"

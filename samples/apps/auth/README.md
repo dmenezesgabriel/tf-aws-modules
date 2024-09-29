@@ -14,7 +14,7 @@
 - **Run**:
 
 ```sh
-make run
+make run ENV=local
 ```
 
 - **Destroy**:

@@ -11,40 +11,40 @@ terraform {
 
 provider "aws" {
   region     = var.aws_region_name
-  access_key = "test"
-  secret_key = "test"
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
 
-  s3_use_path_style           = false
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
+  s3_use_path_style           = var.s3_use_path_style
+  skip_credentials_validation = var.skip_credentials_validation
+  skip_metadata_api_check     = var.skip_metadata_api_check
+  skip_requesting_account_id  = var.skip_requesting_account_id
 
 
   endpoints {
-    apigateway     = "http://motoserver:4566"
-    apigatewayv2   = "http://motoserver:4566"
-    cloudformation = "http://motoserver:4566"
-    cloudwatch     = "http://motoserver:4566"
-    cognitoidp     = "http://motoserver:4566"
-    dynamodb       = "http://motoserver:4566"
-    ec2            = "http://motoserver:4566"
-    es             = "http://motoserver:4566"
-    elasticache    = "http://motoserver:4566"
-    firehose       = "http://motoserver:4566"
-    iam            = "http://motoserver:4566"
-    kinesis        = "http://motoserver:4566"
-    lambda         = "http://motoserver:4566"
-    rds            = "http://motoserver:4566"
-    redshift       = "http://motoserver:4566"
-    route53        = "http://motoserver:4566"
-    s3             = "http://s3.motoserver.localstack.cloud:4566"
-    secretsmanager = "http://motoserver:4566"
-    ses            = "http://motoserver:4566"
-    sns            = "http://motoserver:4566"
-    sqs            = "http://motoserver:4566"
-    ssm            = "http://motoserver:4566"
-    stepfunctions  = "http://motoserver:4566"
-    sts            = "http://motoserver:4566"
+    apigateway     = var.aws_service_endpoints["apigateway"]
+    apigatewayv2   = var.aws_service_endpoints["apigatewayv2"]
+    cloudformation = var.aws_service_endpoints["cloudformation"]
+    cloudwatch     = var.aws_service_endpoints["cloudwatch"]
+    cognitoidp     = var.aws_service_endpoints["cognitoidp"]
+    dynamodb       = var.aws_service_endpoints["dynamodb"]
+    ec2            = var.aws_service_endpoints["ec2"]
+    es             = var.aws_service_endpoints["es"]
+    elasticache    = var.aws_service_endpoints["elasticache"]
+    firehose       = var.aws_service_endpoints["firehose"]
+    iam            = var.aws_service_endpoints["iam"]
+    kinesis        = var.aws_service_endpoints["kinesis"]
+    lambda         = var.aws_service_endpoints["lambda"]
+    rds            = var.aws_service_endpoints["rds"]
+    redshift       = var.aws_service_endpoints["redshift"]
+    route53        = var.aws_service_endpoints["route53"]
+    s3             = var.aws_service_endpoints["s3"]
+    secretsmanager = var.aws_service_endpoints["secretsmanager"]
+    ses            = var.aws_service_endpoints["ses"]
+    sns            = var.aws_service_endpoints["sns"]
+    sqs            = var.aws_service_endpoints["sqs"]
+    ssm            = var.aws_service_endpoints["ssm"]
+    stepfunctions  = var.aws_service_endpoints["stepfunctions"]
+    sts            = var.aws_service_endpoints["sts"]
   }
 }
 

@@ -3,7 +3,9 @@ terraform-%:
 	@echo "Run terraform $*"
 	@echo "========================"
 	@if [ "$*" = "apply" ] || [ "$*" = "destroy" ]; then \
-		docker compose run --rm terraform $* --auto-approve; \
+		docker compose run --rm terraform $* \
+		--auto-approve \
+		-var-file=inventories/$(ENV)/terraform.tfvars; \
 	else \
 		docker compose run --rm terraform $*; \
 	fi
