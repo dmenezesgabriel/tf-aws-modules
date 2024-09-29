@@ -24,9 +24,11 @@ unit-tests:
 	-s \
 	-x \
 	-vv \
-	--cov . \
+	--color=yes \
+	--cov=/app/src \
 	--cov-report=html:/app/reports/coverage \
 	--cov-report=xml:/app/reports/coverage/coverage.xml \
+	--cov-report=term-missing \
 	--alluredir /app/allure-results"
 
 allure:

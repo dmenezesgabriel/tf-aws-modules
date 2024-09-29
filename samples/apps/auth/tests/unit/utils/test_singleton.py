@@ -1,8 +1,6 @@
 import base64
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.utils.singleton import Singleton, SingletonHash, generate_hash
 
 
