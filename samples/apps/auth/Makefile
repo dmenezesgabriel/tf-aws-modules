@@ -40,3 +40,9 @@ sonar-scan:
 	@echo "Run Sonar scan"
 	@echo "========================"
 	@docker compose -f docker-compose-sonnar.yaml run --rm sonar-scanner
+
+clean:
+	@echo "========================"
+	@echo "Clean python cache files"
+	@echo "========================"
+	@sh scripts/clean.sh

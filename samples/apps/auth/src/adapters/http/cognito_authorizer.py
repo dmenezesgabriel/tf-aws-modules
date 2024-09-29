@@ -1,5 +1,4 @@
 import logging
-import os
 from enum import Enum
 from typing import Any, Literal, Optional, cast
 
@@ -41,7 +40,7 @@ class CognitoJWTAuthorizer(HTTPBearer):
         self.jwks_client = jwks_client
         self.issuer_uri = issuer_uri
 
-    async def __call__(self, request: Request) -> str:
+    async def __call__(self, request: Request) -> Any:
         credentials: Optional[HTTPAuthorizationCredentials] = (
             await super().__call__(request)
         )
