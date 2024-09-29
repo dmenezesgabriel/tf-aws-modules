@@ -5,41 +5,41 @@ from pydantic import BaseModel, EmailStr, Field
 from typing_extensions import TypedDict
 
 
-class UserSignup(BaseModel):
+class UserSignupDTO(BaseModel):
     full_name: str = Field(max_length=50)
     email: EmailStr
     password: Annotated[str, MinLen(8)]
     role: str
 
 
-class UserVerify(BaseModel):
+class UserVerifyDTO(BaseModel):
     email: EmailStr
     confirmation_code: Annotated[str, MaxLen(6)]
 
 
-class UserSignin(BaseModel):
+class UserSigninDTO(BaseModel):
     email: EmailStr
     password: Annotated[str, MinLen(8)]
 
 
-class ConfirmForgotPassword(BaseModel):
+class ConfirmForgotPasswordDTO(BaseModel):
     email: EmailStr
     confirmation_code: Annotated[str, MaxLen(6)]
     new_password: Annotated[str, MinLen(8)]
 
 
-class ChangePassword(BaseModel):
+class ChangePasswordDTO(BaseModel):
     old_password: Annotated[str, MinLen(8)]
     new_password: Annotated[str, MinLen(8)]
     access_token: str
 
 
-class ChangePasswordRequest(BaseModel):
+class ChangePasswordRequestDTO(BaseModel):
     old_password: Annotated[str, MinLen(8)]
     new_password: Annotated[str, MinLen(8)]
 
 
-class RefreshToken(BaseModel):
+class RefreshTokenDTO(BaseModel):
     refresh_token: str
 
 
@@ -50,7 +50,7 @@ class SignUpDict(TypedDict):
     code_delivery_type: str
 
 
-class SignUpResponse(BaseModel):
+class SignUpResponseDTO(BaseModel):
     data: List[SignUpDict]
 
 
@@ -62,7 +62,7 @@ class AccessTokenDict(TypedDict):
     refresh_token: Optional[str]
 
 
-class AccessTokenResponse(BaseModel):
+class AccessTokenResponseDTO(BaseModel):
     data: List[AccessTokenDict]
 
 
@@ -71,23 +71,23 @@ class ForgotPasswordDict(TypedDict):
     code_delivery_type: str
 
 
-class ForgotPasswordResponse(BaseModel):
+class ForgotPasswordResponseDTO(BaseModel):
     data: List[ForgotPasswordDict]
 
 
-class UserAttribute(TypedDict):
+class UserAttributeDTO(TypedDict):
     name: str
     value: str
 
 
 class User(BaseModel):
     username: str
-    user_attributes: List[UserAttribute]
+    user_attributes: List[UserAttributeDTO]
     user_created_at: str
     user_last_modified_at: str
     user_status: str
     user_enabled: bool
 
 
-class GetUserResponse(BaseModel):
+class GetUserResponseDTO(BaseModel):
     data: List[User]

@@ -11,17 +11,17 @@ from src.adapters.exceptions import (
     TooManyRequestsException,
 )
 from src.common.dto import (
-    AccessTokenResponse,
-    ChangePassword,
-    ConfirmForgotPassword,
-    ForgotPasswordResponse,
-    GetUserResponse,
-    SignUpResponse,
+    AccessTokenResponseDTO,
+    ChangePasswordDTO,
+    ConfirmForgotPasswordDTO,
+    ForgotPasswordResponseDTO,
+    GetUserResponseDTO,
+    SignUpResponseDTO,
     User,
-    UserAttribute,
-    UserSignin,
-    UserSignup,
-    UserVerify,
+    UserAttributeDTO,
+    UserSigninDTO,
+    UserSignupDTO,
+    UserVerifyDTO,
 )
 from src.config import get_config
 from src.domain.exceptions import (
@@ -49,13 +49,13 @@ class AWSCognitoAdapter(AWSClientAdapter):
             "AWS_COGNITO_APP_CLIENT_ID"
         )
 
-    def user_signup(self, user: UserSignup) -> SignUpResponse:
+    def user_signup(self, user: UserSignupDTO) -> SignUpResponseDTO:
         try:
             response = self.client.sign_up(
                 ClientId=self.cognito_user_pool_client_id,
                 Username=user.email,
                 Password=user.password,
-                UserAttributes=[
+                UserAttributeDTOs=[
                     {
                         "Name": "name",
                         "Value": user.full_name,
@@ -67,7 +67,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     {"Name": "custom:role", "Value": user.role},
                 ],
             )
-            return SignUpResponse(
+            return SignUpResponseDTO(
                 data=[
                     dict(
                         user_id=response["UserSub"],
@@ -94,7 +94,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def verify_account(self, data: UserVerify) -> Dict[str, Any]:
+    def verify_account(self, data: UserVerifyDTO) -> Dict[str, Any]:
         try:
             response = cast(
                 Dict[str, Any],
@@ -144,7 +144,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def get_user(self, email: EmailStr) -> GetUserResponse:
+    def get_user(self, email: EmailStr) -> GetUserResponseDTO:
         try:
             response = cast(
                 Dict[str, Any],
@@ -152,16 +152,16 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     UserPoolId=self.cognito_app_pool_id, Username=email
                 ),
             )
-            return GetUserResponse(
+            return GetUserResponseDTO(
                 data=[
                     User(
                         username=response["Username"],
                         user_attributes=[
-                            UserAttribute(
+                            UserAttributeDTO(
                                 name=attribute["Name"],
                                 value=attribute["Value"],
                             )
-                            for attribute in response["UserAttributes"]
+                            for attribute in response["UserAttributeDTOs"]
                         ],
                         user_created_at=str(response["UserCreateDate"]),
                         user_last_modified_at=str(
@@ -181,7 +181,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def user_signin(self, data: UserSignin) -> AccessTokenResponse:
+    def user_signin(self, data: UserSigninDTO) -> AccessTokenResponseDTO:
         try:
             response = cast(
                 Dict[str, Any],
@@ -194,7 +194,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     },
                 ),
             )
-            return AccessTokenResponse(
+            return AccessTokenResponseDTO(
                 data=[
                     dict(
                         access_token=response["AuthenticationResult"][
@@ -207,7 +207,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                             "TokenType"
                         ],
                         refresh_token=response["AuthenticationResult"][
-                            "RefreshToken"
+                            "RefreshTokenDTO"
                         ],
                         id_token=response["AuthenticationResult"]["IdToken"],
                     )
@@ -229,7 +229,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponse:
+    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponseDTO:
         try:
             response = cast(
                 Dict[str, Any],
@@ -237,7 +237,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     ClientId=self.cognito_user_pool_client_id, Username=email
                 ),
             )
-            return ForgotPasswordResponse(
+            return ForgotPasswordResponseDTO(
                 data=[
                     dict(
                         code_delivery_destination=response[
@@ -259,7 +259,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             raise
 
     def confirm_forgot_password(
-        self, data: ConfirmForgotPassword
+        self, data: ConfirmForgotPasswordDTO
     ) -> Dict[str, Any]:
         try:
             response = cast(
@@ -283,7 +283,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def change_password(self, data: ChangePassword) -> Dict[str, Any]:
+    def change_password(self, data: ChangePasswordDTO) -> Dict[str, Any]:
         try:
             response = cast(
                 Dict[str, Any],
@@ -309,7 +309,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
             logger.error(f"SignUp error: {error}")
             raise
 
-    def new_access_token(self, refresh_token: str) -> AccessTokenResponse:
+    def new_access_token(self, refresh_token: str) -> AccessTokenResponseDTO:
         try:
             response = cast(
                 Dict[str, Any],
@@ -321,7 +321,7 @@ class AWSCognitoAdapter(AWSClientAdapter):
                     },
                 ),
             )
-            return AccessTokenResponse(
+            return AccessTokenResponseDTO(
                 data=[
                     dict(
                         access_token=response["AuthenticationResult"][

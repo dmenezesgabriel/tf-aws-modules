@@ -10,17 +10,17 @@ from src.adapters.exceptions import (
 )
 from src.adapters.http.cognito_authorizer import CognitoAuthorizerFactory
 from src.common.dto import (
-    AccessTokenResponse,
-    ChangePassword,
-    ChangePasswordRequest,
-    ConfirmForgotPassword,
-    ForgotPasswordResponse,
-    GetUserResponse,
-    RefreshToken,
-    SignUpResponse,
-    UserSignin,
-    UserSignup,
-    UserVerify,
+    AccessTokenResponseDTO,
+    ChangePasswordDTO,
+    ChangePasswordRequestDTO,
+    ConfirmForgotPasswordDTO,
+    ForgotPasswordResponseDTO,
+    GetUserResponseDTO,
+    RefreshTokenDTO,
+    SignUpResponseDTO,
+    UserSigninDTO,
+    UserSignupDTO,
+    UserVerifyDTO,
 )
 from src.domain.exceptions import (
     ExpiredVerificationCodeException,
@@ -47,7 +47,7 @@ class HTTPApiAdapter:
             self.signup_user,
             methods=["POST"],
             tags=["Sign up"],
-            response_model=SignUpResponse,
+            response_model=SignUpResponseDTO,
             status_code=200,
         )
         self.router.add_api_route(
@@ -69,7 +69,7 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["Sign in"],
             status_code=200,
-            response_model=AccessTokenResponse,
+            response_model=AccessTokenResponseDTO,
         )
         self.router.add_api_route(
             "/forgot_password",
@@ -77,7 +77,7 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["Password"],
             status_code=200,
-            response_model=ForgotPasswordResponse,
+            response_model=ForgotPasswordResponseDTO,
         )
         self.router.add_api_route(
             "/confirm_forgot_password",
@@ -101,7 +101,7 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["Refresh token"],
             status_code=200,
-            response_model=AccessTokenResponse,
+            response_model=AccessTokenResponseDTO,
         )
         self.router.add_api_route(
             "/logout",
@@ -119,13 +119,13 @@ class HTTPApiAdapter:
             methods=["POST"],
             tags=["User details"],
             status_code=200,
-            response_model=GetUserResponse,
+            response_model=GetUserResponseDTO,
             dependencies=[
                 Depends(CognitoAuthorizerFactory().get("access_token"))
             ],
         )
 
-    def signup_user(self, user: UserSignup) -> SignUpResponse:
+    def signup_user(self, user: UserSignupDTO) -> SignUpResponseDTO:
         try:
             return self.__auth_service.user_signup(user)
         except UserAlreadyExistsException:
@@ -145,7 +145,7 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def verify_account(self, data: UserVerify) -> Response:
+    def verify_account(self, data: UserVerifyDTO) -> Response:
         try:
             self.__auth_service.verify_account(data)
             return Response(status_code=204)
@@ -188,7 +188,7 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def signin(self, data: UserSignin) -> AccessTokenResponse:
+    def signin(self, data: UserSigninDTO) -> AccessTokenResponseDTO:
         try:
             return self.__auth_service.user_signin(data)
         except UserNotFoundException:
@@ -212,7 +212,7 @@ class HTTPApiAdapter:
     def forgot_password(
         self,
         email: EmailStr,
-    ) -> ForgotPasswordResponse:
+    ) -> ForgotPasswordResponseDTO:
         try:
             return self.__auth_service.forgot_password(email)
         except UserNotFoundException:
@@ -224,7 +224,9 @@ class HTTPApiAdapter:
                 detail="Internal Server Error.",
             )
 
-    def confirm_forgot_password(self, data: ConfirmForgotPassword) -> Response:
+    def confirm_forgot_password(
+        self, data: ConfirmForgotPasswordDTO
+    ) -> Response:
         try:
             self.__auth_service.confirm_forgot_password(data)
             return Response(status_code=204)
@@ -241,14 +243,14 @@ class HTTPApiAdapter:
 
     def change_password(
         self,
-        data: ChangePasswordRequest,
+        data: ChangePasswordRequestDTO,
         access_token: str = Depends(
             CognitoAuthorizerFactory().get("access_token")
         ),
     ) -> Response:
         try:
             self.__auth_service.change_password(
-                ChangePassword(
+                ChangePasswordDTO(
                     old_password=data.old_password,
                     new_password=data.new_password,
                     access_token=access_token,
@@ -272,8 +274,8 @@ class HTTPApiAdapter:
             )
 
     def new_access_token(
-        self, refresh_token: RefreshToken
-    ) -> AccessTokenResponse:
+        self, refresh_token: RefreshTokenDTO
+    ) -> AccessTokenResponseDTO:
         try:
             return self.__auth_service.new_access_token(
                 refresh_token.refresh_token
@@ -318,12 +320,11 @@ class HTTPApiAdapter:
     def user_details(
         self,
         email: EmailStr,
-        access_token: str = Depends(
-            CognitoAuthorizerFactory().get("access_token")
-        ),
-    ) -> GetUserResponse:
+        # access_token: str = Depends(
+        #     CognitoAuthorizerFactory().get("access_token")
+        # ),
+    ) -> GetUserResponseDTO:
         try:
-
             return self.__auth_service.user_details(email)
         except Exception as error:
             logger.exception(error)

@@ -4,25 +4,25 @@ from typing import Any, Dict
 from pydantic import EmailStr
 
 from src.common.dto import (
-    AccessTokenResponse,
-    ChangePassword,
-    ConfirmForgotPassword,
-    ForgotPasswordResponse,
-    GetUserResponse,
-    SignUpResponse,
-    UserSignin,
-    UserSignup,
-    UserVerify,
+    AccessTokenResponseDTO,
+    ChangePasswordDTO,
+    ConfirmForgotPasswordDTO,
+    ForgotPasswordResponseDTO,
+    GetUserResponseDTO,
+    SignUpResponseDTO,
+    UserSigninDTO,
+    UserSignupDTO,
+    UserVerifyDTO,
 )
 
 
 class AuthPort(ABC):
     @abstractmethod
-    def user_signup(self, user: UserSignup) -> SignUpResponse:
+    def user_signup(self, user: UserSignupDTO) -> SignUpResponseDTO:
         raise NotImplementedError
 
     @abstractmethod
-    def verify_account(self, data: UserVerify) -> Dict[str, Any]:
+    def verify_account(self, data: UserVerifyDTO) -> Dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -30,29 +30,29 @@ class AuthPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_user(self, email: EmailStr) -> GetUserResponse:
+    def get_user(self, email: EmailStr) -> GetUserResponseDTO:
         raise NotImplementedError
 
     @abstractmethod
-    def user_signin(self, data: UserSignin) -> AccessTokenResponse:
+    def user_signin(self, data: UserSigninDTO) -> AccessTokenResponseDTO:
         raise NotImplementedError
 
     @abstractmethod
-    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponse:
+    def forgot_password(self, email: EmailStr) -> ForgotPasswordResponseDTO:
         raise NotImplementedError
 
     @abstractmethod
     def confirm_forgot_password(
-        self, data: ConfirmForgotPassword
+        self, data: ConfirmForgotPasswordDTO
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def change_password(self, data: ChangePassword) -> Dict[str, Any]:
+    def change_password(self, data: ChangePasswordDTO) -> Dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def new_access_token(self, refresh_token: str) -> AccessTokenResponse:
+    def new_access_token(self, refresh_token: str) -> AccessTokenResponseDTO:
         raise NotImplementedError
 
     @abstractmethod
