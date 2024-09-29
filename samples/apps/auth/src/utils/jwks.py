@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import Dict, Optional, cast
 
 import jwt
 import requests
 from jwt.algorithms import RSAAlgorithm
+
+logger = logging.getLogger()
 
 
 class JWKClient:
@@ -43,8 +46,8 @@ class JWKClient:
             )
 
         except requests.RequestException as error:
-            print(f"Failed to fetch JWKs: {error}")
+            logger.error(f"Failed to fetch JWKs: {error}")
             raise
         except jwt.DecodeError as error:
-            print(f"Failed to decode JWT: {error}")
+            logger.error(f"Failed to decode JWT: {error}")
             raise

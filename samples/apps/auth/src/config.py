@@ -20,15 +20,15 @@ class Config(metaclass=Singleton):
     )
 
     def __init__(self) -> None:
-        self.__configure_logging()
-        self.__parameter_store_adapter = self.__load_parameter_store()
+        self._configure_logging()
+        self._parameter_store_adapter = self._load_parameter_store()
 
-    def __configure_logging(self) -> None:
+    def _configure_logging(self) -> None:
         logger_config = Resource.load_json("logger.json")
         logging.config.dictConfig(logger_config)
         logging.getLogger().setLevel(getattr(logging, self.LOG_LEVEL))
 
-    def __load_parameter_store(
+    def _load_parameter_store(
         self, module_name: Optional[str] = None
     ) -> ParameterStorePort:
         module = self.PARAMETER_STORE_MODULE
@@ -47,9 +47,9 @@ class Config(metaclass=Singleton):
     def get_parameter(
         self, name: str, module_name: Optional[str] = None
     ) -> Optional[str]:
-        parameter_store = self.__parameter_store_adapter
+        parameter_store = self._parameter_store_adapter
         if module_name:
-            parameter_store = self.__load_parameter_store(module_name)
+            parameter_store = self._load_parameter_store(module_name)
         return parameter_store.get_parameter(name)
 
 

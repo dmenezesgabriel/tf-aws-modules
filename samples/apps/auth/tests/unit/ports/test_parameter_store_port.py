@@ -1,94 +1,114 @@
-# mypy: ignore-errors
-from typing import Dict, Optional
-from unittest.mock import MagicMock
+from typing import Optional
+from unittest.mock import patch
 
 import pytest
 
 from src.ports.parameter_store_port import ParameterStorePort
 
 
-class TestParameterStorePortAbstraction:
-    def test_cannot_instantiate_abstract_class(self) -> None:
-        # Arrange & Act & Assert
+class ConcreteParameterStore(ParameterStorePort):
+    def get_parameter(self, key: str) -> Optional[str]:
+        return f"Value for {key}"
+
+
+class TestParameterStorePort:
+
+    def test_abstract_class_cannot_be_instantiated(self) -> None:
         with pytest.raises(TypeError):
-            ParameterStorePort()  # type: ignore[abstract]
+            ParameterStorePort()
 
-    def test_cannot_instantiate_incomplete_implementation(self) -> None:
-        # Arrange
-        class IncompleteParameterStore(ParameterStorePort):
-            pass
-
-        # Act & Assert
-        with pytest.raises(TypeError):
-            IncompleteParameterStore()  # type: ignore[abstract]
-
-
-class TestParameterStorePortImplementation:
-    @pytest.fixture
-    def concrete_store(self) -> ParameterStorePort:
-        class ConcreteParameterStore(ParameterStorePort):
+    def test_abstract_method_raises_not_implemented_error(self) -> None:
+        class IncompleteStore(ParameterStorePort):
             def get_parameter(self, key: str) -> Optional[str]:
-                return f"Value for {key}"
+                return super().get_parameter(key)
 
-        return ConcreteParameterStore()
+        incomplete_store = IncompleteStore()
+        with pytest.raises(NotImplementedError):
+            incomplete_store.get_parameter("test_key")
 
-    def test_concrete_implementation(
-        self, concrete_store: ParameterStorePort
-    ) -> None:
-        # Act
-        result = concrete_store.get_parameter("test_key")
+    def test_concrete_class_can_be_instantiated(self) -> None:
+        store = ConcreteParameterStore()
+        assert isinstance(store, ParameterStorePort)
 
-        # Assert
-        assert isinstance(concrete_store, ParameterStorePort)
+    def test_concrete_implementation(self) -> None:
+        store = ConcreteParameterStore()
+        result = store.get_parameter("test_key")
         assert result == "Value for test_key"
 
-    @pytest.fixture
-    def test_store(self) -> ParameterStorePort:
-        class TestParameterStore(ParameterStorePort):
-            def __init__(self) -> None:
-                self.test_data: Dict[str, str] = {
-                    "existing_key": "existing_value",
-                    "another_key": "another_value",
-                }
-
-            def get_parameter(self, key: str) -> Optional[str]:
-                return self.test_data.get(key)
-
-        return TestParameterStore()
+    def test_get_parameter_called_with_correct_argument(self) -> None:
+        store = ConcreteParameterStore()
+        with patch.object(
+            store, "get_parameter", wraps=store.get_parameter
+        ) as mock_get_parameter:
+            store.get_parameter("some_key")
+            mock_get_parameter.assert_called_once_with("some_key")
 
     @pytest.mark.parametrize(
-        "key, expected_value",
+        "return_value, expected_result",
         [
-            ("existing_key", "existing_value"),
-            ("another_key", "another_value"),
-            ("non_existing_key", None),
+            (None, None),
+            ("mocked_value", "mocked_value"),
+            ("", ""),
+            ("special_value", "special_value"),
         ],
     )
-    def test_get_parameter_implementation(
-        self,
-        test_store: ParameterStorePort,
-        key: str,
-        expected_value: Optional[str],
+    def test_get_parameter_returns(
+        self, return_value: Optional[str], expected_result: Optional[str]
     ) -> None:
-        # Act
-        result = test_store.get_parameter(key)
+        store = ConcreteParameterStore()
+        with patch.object(store, "get_parameter", return_value=return_value):
+            result = store.get_parameter("test_key")
+            assert result == expected_result
 
-        # Assert
-        assert result == expected_value
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "normal_key",
+            "",
+            "!@#$%^&*()_+",
+        ],
+    )
+    def test_get_parameter_with_different_keys(self, key: str) -> None:
+        store = ConcreteParameterStore()
+        result = store.get_parameter(key)
+        assert result == f"Value for {key}"
 
-    def test_get_parameter_called_with_correct_argument(self) -> None:
-        # Arrange
-        mock_get_parameter = MagicMock(return_value="mocked_value")
 
-        class MockParameterStore(ParameterStorePort):
-            get_parameter = mock_get_parameter
+class TestParameterStorePortEdgeCases:
 
-        store = MockParameterStore()
-        test_key = "test_key"
+    def test_subclass_with_additional_methods(self) -> None:
+        class ExtendedStore(ParameterStorePort):
+            def get_parameter(self, key: str) -> Optional[str]:
+                return f"Extended {key}"
 
-        # Act
-        result = store.get_parameter(test_key)
+            def additional_method(self) -> str:
+                return "Additional functionality"
 
-        # Assert
-        mock_get_parameter.assert_called_once_with(test_key)
-        assert result == "mocked_value"
+        store = ExtendedStore()
+        assert store.get_parameter("test") == "Extended test"
+        assert store.additional_method() == "Additional functionality"
+
+
+@pytest.mark.parametrize(
+    "custom_value",
+    [
+        "Custom test",
+        "Another custom value",
+        "",
+    ],
+)
+def test_parameter_store_port_subclass_type_check(custom_value: str) -> None:
+    class CustomStore(ParameterStorePort):
+        def get_parameter(self, key: str) -> Optional[str]:
+            return custom_value
+
+    def use_parameter_store(store: ParameterStorePort) -> Optional[str]:
+        return store.get_parameter("test")
+
+    custom_store = CustomStore()
+    result = use_parameter_store(custom_store)
+    assert result == custom_value
+
+
+if __name__ == "__main__":
+    pytest.main()

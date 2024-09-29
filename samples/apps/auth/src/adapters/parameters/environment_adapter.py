@@ -20,12 +20,7 @@ class EnvironmentParameterStoreAdapter(
         parameter = os.getenv(key)
         if parameter:
             return parameter
-        raise ParameterNotFoundException(
-            {
-                "code": "environment.error.__get_parameter",
-                "message": "Parameter not found",
-            }
-        )
+        raise ParameterNotFoundException("Parameter not found.")
 
     def get_parameter(self, name: str) -> Optional[str]:
         if not self.__parameter_map:
