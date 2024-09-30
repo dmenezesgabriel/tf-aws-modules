@@ -18,7 +18,7 @@ paths:
                 - subject
                 - body
                 - sender
-                - recipient
+                - recipients
               properties:
                 subject:
                   type: string
@@ -26,8 +26,10 @@ paths:
                   type: string
                 sender:
                   type: string
-                recipient:
-                  type: string
+                recipients:
+                  type: array
+                  items:
+                    type: string
       responses:
         default:
           description: "Default response for ANY /ses_api"

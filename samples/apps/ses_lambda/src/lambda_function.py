@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from dataclasses import asdict, dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -37,7 +37,7 @@ class EmailParams:
     subject: str
     body: str
     sender: str
-    recipient: str
+    recipients: List[str]
 
 
 class EmailSender:
@@ -55,10 +55,20 @@ class EmailSender:
             start_time = time.time()
             response = self.client.send_email(
                 Source=email_params.sender,
-                Destination={"ToAddresses": [email_params.recipient]},
+                Destination={
+                    "ToAddresses": email_params.recipients,
+                },
                 Message={
-                    "Subject": {"Data": email_params.subject},
-                    "Body": {"Text": {"Data": email_params.body}},
+                    "Subject": {
+                        "Charset": "UTF-8",
+                        "Data": email_params.subject,
+                    },
+                    "Body": {
+                        "Html": {
+                            "Charset": "UTF-8",
+                            "Data": email_params.body,
+                        }
+                    },
                 },
             )
             end_time = time.time()
@@ -86,7 +96,7 @@ def parse_event(event: Dict[str, Any]) -> EmailParams:
         subject=params["subject"],
         body=params["body"],
         sender=params["sender"],
-        recipient=params["recipient"],
+        recipients=params["recipients"],
     )
 
 
