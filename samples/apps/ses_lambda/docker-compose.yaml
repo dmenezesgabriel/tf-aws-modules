@@ -1,7 +1,0 @@
-services:
-  terraform:
-    image: hashicorp/terraform:latest
-    volumes:
-      - ./infra/aws/setup:/infra:rw
-      - ~/.aws:/root/.aws
-    working_dir: /infra
