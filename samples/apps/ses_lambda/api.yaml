@@ -1,0 +1,39 @@
+openapi: "3.0.1"
+info:
+  title: "ses_api"
+  version: "1.0"
+paths:
+  /ses_api:
+    post:
+      tags:
+        - Email
+      summary: send an email
+      operationId: Submit a query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subject
+                - body
+                - sender
+                - recipient
+              properties:
+                subject:
+                  type: string
+                body:
+                  type: string
+                sender:
+                  type: string
+                recipient:
+                  type: string
+      responses:
+        default:
+          description: "Default response for ANY /ses_api"
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "${ses_lambda_arn}"
+        connectionType: "INTERNET"

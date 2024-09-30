@@ -207,3 +207,4 @@ mongo_data/
 .env.auth
 .env.command
 .env.query
+*.zip
