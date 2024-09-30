@@ -1,3 +1,4 @@
+import json
 import logging
 
 import boto3
@@ -7,11 +8,13 @@ logger.setLevel("INFO")
 
 
 def lambda_handler(event, context):
-    # Get the email details from the event
-    subject = event["subject"]
-    body = event["body"]
-    sender = event["sender"]
-    recipient = event["recipient"]
+    params = event
+    if "body" in event:
+        params = json.loads(event["body"])
+    subject = params["subject"]
+    body = params["body"]
+    sender = params["sender"]
+    recipient = params["recipient"]
 
     try:
         message_id = send_email(subject, body, sender, recipient)
