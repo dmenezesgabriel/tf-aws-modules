@@ -42,3 +42,8 @@ variable "api_gateway_access_log_settings" {
   }
   description = "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html#apigateway-cloudwatch-log-formats"
 }
+
+variable "save_to_ssm" {
+  type    = bool
+  default = true
+}
